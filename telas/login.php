@@ -178,18 +178,19 @@
         <div class="right-side">
             <h2 class="login-title">Login</h2>
             <p style="text-align: center; color: #555; margin-bottom: 20px;">Acesse ao SUAP IFGOIANO:</p>
-            <form>
-                <div class="form-group">
-                    <label for="usuario">Usuário:</label>
-                    <input type="text" id="usuario" name="usuario" required>
-                </div>
-                <div class="form-group password-container">
-                    <label for="senha">Senha:</label>
-                    <input type="password" id="senha" name="senha" required>
-                    <span class="password-toggle" onclick="togglePasswordVisibility()">👁️</span>
-                </div>
-                <button type="submit" class="login-button">Acessar</button>
-            </form>
+            <form action="verifica_login.php" method="POST">
+    <div class="form-group">
+        <label for="siape">SIAPE:</label>
+        <input type="text" id="siape" name="siape" required>
+    </div>
+    <div class="form-group password-container">
+        <label for="senha">Senha:</label>
+        <input type="password" id="senha" name="senha" required>
+        <span class="password-toggle" onclick="togglePasswordVisibility()"></span>
+    </div>
+    <button type="submit" class="login-button">Acessar</button>
+</form>
+
             <div class="forgot-password">
                 <a href="#">Esqueceu ou deseja alterar sua senha?</a>
             </div>
@@ -204,7 +205,7 @@
     </div>
 
     <script>
-        function togglePasswordVisibility() {
+      function togglePasswordVisibility() {
             const passwordInput = document.getElementById("senha");
             const toggleIcon = document.querySelector(".password-toggle");
             if (passwordInput.type === "password") {
