@@ -1,12 +1,3 @@
-<?php
-    session_start();
-    if (!isset($_SESSION['usuario'])) {
-        header("Location: login.php");
-        exit();
-    }
-    $nomeUsuario = $_SESSION['usuario'];
-?>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -16,19 +7,19 @@
     <style>
         body {
             font-family: sans-serif;
-            margin: 0; /* Reset default margin */
-            display: flex; /* Enable flexbox for layout */
+            margin: 0;
+            display: flex;
         }
 
         .sidebar {
-            background-color: #f0f7f4; /* Light green sidebar */
+            background-color: #f0f7f4;
             width: 250px;
             height: 100vh;
             position: fixed;
-            left: -250px; /* Initially hidden */
+            left: -250px;
             top: 0;
             transition: left 0.3s ease;
-            padding-top: 60px; /* Adjust for the header */
+            padding-top: 60px;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
 
@@ -46,19 +37,21 @@
             display: block;
             padding: 15px 20px;
             text-decoration: none;
-            color: #386641; /* Dark green text */
+            color: #386641;
             transition: background-color 0.3s ease;
         }
 
         .sidebar ul li a:hover {
-            background-color: #e0ece7; /* Lighter green on hover */
+            background-color: #e0ece7;
         }
 
         .content {
-            flex-grow: 1; /* Content takes remaining width */
+            flex-grow: 1;
             padding: 20px;
             transition: margin-left 0.3s ease;
-            margin-left: 0; /* Adjust margin when sidebar is open */
+            margin-left: 0;
+            display: flex; /* Added flex to contain main content and info box */
+            flex-direction: column; /* Stack main content below info box */
         }
 
         .content.sidebar-open {
@@ -66,61 +59,112 @@
         }
 
         .menu-button {
-            background-color: #2a9d8f; /* Teal button */
+            background-color: #2a9d8f;
             color: white;
             border: none;
             padding: 10px 15px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            position: fixed; /* Fixed position for the button */
+            position: fixed;
             top: 10px;
             left: 10px;
-            z-index: 10; /* Ensure it's above the sidebar */
+            z-index: 10;
         }
 
         .menu-button:hover {
             background-color: #268074;
         }
 
+        .user-info {
+            background-color: #e0ece7; /* Light green background for info box */
+            padding: 10px 15px;
+            border-radius: 5px;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
+            color: #386641;
+            text-align: right;
+        }
+
+        .user-info p {
+            margin: 5px 0;
+        }
+
         h1 {
             text-align: center;
             margin-bottom: 20px;
             color: #386641;
+            margin-top: 60px; /* Adjust margin to be below the info box */
         }
 
         p {
             margin-bottom: 15px;
             color: #555;
         }
+
+        .notification {
+            background-color: #4CAF50; /* Green notification background */
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            position: fixed;
+            bottom: 20px; /* Changed top to bottom */
+            right: 20px; /* Changed left and transform */
+            z-index: 11; /* Ensure it's above other elements */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
     </style>
 </head>
-<body>
+<body onload="showNotification()">
     <button class="menu-button" onclick="toggleSidebar()">☰ Menu</button>
 
     <div class="sidebar">
         <ul>
             <li><a href="#">Falta Programada</a></li>
             <li><a href="#">Falta não programada</a></li>
-            </ul>
+            <li><a href="#">Repor Aulas</a></li>
+            <li><a href="#">Relatório de aulas</a></li>
+        </ul>
     </div>
 
     <div class="content">
-        <h1>Bem-vindo(a), <?php echo htmlspecialchars($nomeUsuario); ?>!</h1>
-        <p>Esta é a tela principal do seu programa com um menu lateral.</p>
-        <p>Clique no botão "☰ Menu" no canto superior esquerdo para abrir a barra lateral.</p>
+        <div class="user-info">
+            <p>Nome: Exemplo de Nome</p>
+            <p>SIAPE: 1234567</p>
         </div>
+        <h1>Bem-vindo(a)!</h1>
+        <p>Esta é a tela principal do seu programa com um menu lateral e informações do usuário.</p>
+        <p>Clique no botão "☰ Menu" no canto superior esquerdo para abrir a barra lateral.</p>
+    </div>
+
+    <div id="notification" class="notification">
+        Bem vindo Exemplo de Nome
+    </div>
 
     <script>
         const sidebar = document.querySelector('.sidebar');
         const content = document.querySelector('.content');
-        const body = document.body;
+        const notification = document.getElementById('notification');
 
         function toggleSidebar() {
             sidebar.classList.toggle('open');
             content.classList.toggle('sidebar-open');
-            // Optional: Toggle a class on the body to adjust other elements if needed
-            // body.classList.toggle('sidebar-open');
+        }
+
+        function showNotification() {
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000); // Hide after 3 seconds
         }
     </script>
 </body>
