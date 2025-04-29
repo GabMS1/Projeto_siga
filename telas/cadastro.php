@@ -171,8 +171,9 @@
             <div class="logo">  
                 <img src="logos ifgoiano.png" alt="Instituto Federal Goiano">
             </div>
-            <h1>Um software desenvolvido para a instituição.</h1>
+            <h1>Menos Burocracia, Mais Educação!</h1>
             <img src="logoAGAETECH.png-removebg-preview.png" alt="Ilustração" style="max-width: 40%; height: auto; margin-top: 15px;">
+            <h2>Transformando a Gestão Acadêmica com Tecnologia. </h2>
         </div>
         <div class="right-side">
             <h2 class="login-title">Cadastro</h2>
