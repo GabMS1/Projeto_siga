@@ -172,7 +172,7 @@
             <div class="logo">  
                 <img src="logos ifgoiano.png" alt="Instituto Federal Goiano">
             </div>
-            <h1>Um software desenvolvido por 4 devs para instituições.</h1>
+            <h1>Um software desenvolvido para instituições.</h1>
             <img src="logoAGAETECH.png-removebg-preview.png" alt="Ilustração" style="max-width: 40%; height: auto; margin-top: 15px;">
         </div>
         <div class="right-side">
