@@ -1,29 +1,41 @@
 <?php
-include("conexao_bd.php");
+require_once 'conexao_bd.php';
+session_start();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $siape = $_POST['siape'];
+$conn = new mysqli($host, $user, $pass, $dbname);
+if ($conn->connect_error) {
+    die("Erro na conexão: " . $conn->connect_error);
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $siape = $conn->real_escape_string($_POST['siape']);
     $senha = $_POST['senha'];
 
-    $sql = "SELECT senha FROM professor WHERE siape_prof = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $siape);
-    $stmt->execute();
-    $stmt->store_result();
+    $sql = "SELECT siape_prof, senha, nome FROM professor WHERE siape_prof = '$siape'";
+    $result = $conn->query($sql);
 
-    if ($stmt->num_rows > 0) {
-        $stmt->bind_result($senha_hash);
-        $stmt->fetch();
-        if (password_verify($senha, $senha_hash)) {
-            echo "Login realizado com sucesso!";
+    if ($result && $result->num_rows === 1) {
+        $usuario = $result->fetch_assoc();
+
+        echo "aqui fora";
+
+        if (password_verify($senha, $usuario['senha'])) {
+            echo "aqui";
+            $_SESSION['siape_prof'] = $usuario['siape'];
+            $_SESSION['nome'] = $usuario['nome'];
+
+            header("Location: principal.php");
+            exit();
         } else {
-            echo "Senha incorreta!";
+            echo "aqui else";
+            $_SESSION['msg'] = "Senha incorreta.";
+            header("Location: login.php");
+            exit();
         }
     } else {
-        echo "SIAPE não encontrado!";
+        $_SESSION['msg'] = "SIAPE não encontrado.";
+        header("Location: login.php");
+        exit();
     }
-
-    $stmt->close();
-    $conn->close();
 }
 ?>

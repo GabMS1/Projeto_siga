@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,8 @@
         body {
             font-family: sans-serif;
             margin: 0;
-            background-color: #386641; /* Dark green background */
+            background-color: #386641;
+            /* Dark green background */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,7 +18,8 @@
         }
 
         .container {
-            background-color: #f0f7f4; /* Light green background for the card */
+            background-color: #f0f7f4;
+            /* Light green background for the card */
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             display: flex;
@@ -26,7 +29,8 @@
         }
 
         .left-side {
-            background-color: #386641; /* Dark green for the left side */
+            background-color: #386641;
+            /* Dark green for the left side */
             color: #f0f7f4;
             padding: 40px;
             display: flex;
@@ -41,7 +45,8 @@
         }
 
         .logo img {
-            max-width: 150px; /* Adjust as needed */
+            max-width: 150px;
+            /* Adjust as needed */
             height: auto;
         }
 
@@ -64,7 +69,8 @@
         }
 
         .login-title {
-            color: #386641; /* Dark green for the login title */
+            color: #386641;
+            /* Dark green for the login title */
             font-size: 2em;
             margin-bottom: 25px;
             text-align: center;
@@ -105,7 +111,8 @@
         }
 
         .login-button {
-            background-color: #2a9d8f; /* Teal button color */
+            background-color: #2a9d8f;
+            /* Teal button color */
             color: #fff;
             padding: 12px 15px;
             border: none;
@@ -169,7 +176,7 @@
 <body>
     <div class="container">
         <div class="left-side">
-            <div class="logo">  
+            <div class="logo">
                 <img src="logos ifgoiano.png" alt="Instituto Federal Goiano">
             </div>
             <h1>Um software desenvolvido para instituições.</h1>
@@ -178,18 +185,18 @@
         <div class="right-side">
             <h2 class="login-title">Login</h2>
             <p style="text-align: center; color: #555; margin-bottom: 20px;">Acesse ao SUAP IFGOIANO:</p>
-            <form action="verifica_login.php" method="POST">
-    <div class="form-group">
-        <label for="siape">SIAPE:</label>
-        <input type="text" id="siape" name="siape" required>
-    </div>
-    <div class="form-group password-container">
-        <label for="senha">Senha:</label>
-        <input type="password" id="senha" name="senha" required>
-        <span class="password-toggle" onclick="togglePasswordVisibility()"></span>
-    </div>
-    <button type="submit" class="login-button">Acessar</button>
-</form>
+            <form action="processo_login.php" method="POST">
+                <div class="form-group">
+                    <label for="siape">SIAPE:</label>
+                    <input type="text" id="siape" name="siape" required>
+                </div>
+                <div class="form-group password-container">
+                    <label for="senha">Senha:</label>
+                    <input type="password" id="senha" name="senha" required>
+                    <span class="password-toggle" onclick="togglePasswordVisibility()"></span>
+                </div>
+                <button type="submit" class="login-button">Acessar</button>
+            </form>
 
             <div class="forgot-password">
                 <a href="#">Esqueceu ou deseja alterar sua senha?</a>
@@ -205,7 +212,7 @@
     </div>
 
     <script>
-      function togglePasswordVisibility() {
+        function togglePasswordVisibility() {
             const passwordInput = document.getElementById("senha");
             const toggleIcon = document.querySelector(".password-toggle");
             if (passwordInput.type === "password") {
@@ -218,4 +225,5 @@
         }
     </script>
 </body>
+
 </html>
