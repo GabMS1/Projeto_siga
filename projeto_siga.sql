@@ -80,3 +80,5 @@ CREATE TABLE relatorio (
     FOREIGN KEY (id_progra) REFERENCES programada(id_progra),
     FOREIGN KEY (id_adm) REFERENCES admin(id_adm)
 );
+
+ALTER TABLE professor ADD senha VARCHAR(20);
