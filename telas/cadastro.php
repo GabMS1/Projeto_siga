@@ -187,7 +187,7 @@
         <input type="password" id="senha" name="senha" required>
     </div>
     <button type="submit" class="login-button" name="enviar">Cadastrar</button>
-
+<a href=""></a>
     <div style="margin-top: 15px; text-align: center;">
         <a href="login.php" style="display: inline-block; background-color: #6a994e; color: #fff; padding: 10px 15px; border-radius: 4px; text-decoration: none;">Ir para Login</a>
     </div>
