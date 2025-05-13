@@ -8,7 +8,7 @@ if ($conn->connect_error) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $siape = $conn->real_escape_string($_POST['siape']);
+    $siape = $conn->real_escape_string($_POST['siape_prof']);
     $senha = $_POST['senha'];
 
     $sql = "SELECT siape_prof, senha, nome FROM professor WHERE siape_prof = '$siape'";
@@ -17,14 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($result && $result->num_rows === 1) {
         $usuario = $result->fetch_assoc();
 
-        echo "aqui fora";
 
         if (password_verify($senha, $usuario['senha'])) {
-            echo "aqui";
             $_SESSION['siape_prof'] = $usuario['siape'];
             $_SESSION['nome'] = $usuario['nome'];
 
-            header("Location: principal.php");
+            header("Location: ./principal.php");
             exit();
         } else {
             echo "aqui else";
@@ -38,4 +36,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 }
+
 ?>

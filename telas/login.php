@@ -188,7 +188,7 @@
             <form action="processo_login.php" method="POST">
                 <div class="form-group">
                     <label for="siape">SIAPE:</label>
-                    <input type="text" id="siape" name="siape" required>
+                    <input type="text" id="siape_prof" name="siape" required>
                 </div>
                 <div class="form-group password-container">
                     <label for="senha">Senha:</label>
@@ -225,5 +225,4 @@
         }
     </script>
 </body>
-
 </html>

@@ -1,12 +1,4 @@
-<?php
-session_start();
 
-// Verifica se o usuário está logado
-if (!isset($_SESSION['siape_prof']) || !isset($_SESSION['nome'])) {
-    header("Location: login.php");
-    exit();
-}
-?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
