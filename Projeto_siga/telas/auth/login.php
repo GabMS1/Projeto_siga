@@ -1,47 +1,48 @@
-<?php
-// C:\xampp\htdocs\Projeto_trabalho\telas\auth\login.php
+﻿<?php
+// C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\telas\auth\login.php
 
-// Inicia a sessão PHP, fundamental para usar $_SESSION para mensagens
+// ATENÇÃO: ESTAS LINHAS DE DEBUG ESTÃO ATIVADAS. ELAS DEVEM SER AS PRIMEIRAS DO ARQUIVO.
+// Qualquer coisa (incluindo espaços invisíveis ou "aqui. AQUI!!") ANTES delas
+// ou antes de session_start() VAI CAUSAR ERROS de "headers already sent".
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Inicia a sessão PHP. DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 };
 
-// Inclui a classe Professor (Servico) para usar a lógica de negócio
+// Inclui a classe Professor (Servico).
 require_once __DIR__ . '/../../negocio/ProfessorServico.php';
 
 // --- INÍCIO DA LÓGICA PHP PARA PROCESSAR O FORMULÁRIO ---
-// Verifica se a requisição é um POST (ou seja, o formulário foi submetido)
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Captura os dados enviados pelo formulário via POST
-    $siape = $_POST['siape'] ?? ''; // O name do input é 'siape'
+    $siape = $_POST['siape'] ?? '';
     $senha = $_POST['senha'] ?? '';
 
-    // Validação básica: verifica se algum campo está vazio
     if (empty($siape) || empty($senha)) {
         $_SESSION['login_error'] = "SIAPE e senha são obrigatórios.";
-        header("Location: login.php"); // Redireciona de volta para a mesma página
+        header("Location: login.php");
         exit;
     }
 
-    $professorServico = new Professor(); // Cria uma nova instância da classe de serviço
+    $professorServico = new Professor();
 
-    // Tenta autenticar o professor usando o método da classe de serviço
     $authResult = $professorServico->autenticar($siape, $senha);
 
-    if ($authResult) { // Se $authResult não for false (ou seja, for um array com siape e nome)
-        $_SESSION['usuario_logado'] = $authResult['siape']; // Armazena o SIAPE do usuário logado na sessão
-        $_SESSION['nome_usuario_logado'] = $authResult['nome']; // Armazena o nome do usuário logado na sessão
-        $_SESSION['login_success'] = "Login realizado com sucesso!"; // Mensagem de sucesso (opcional)
+    if ($authResult) {
+        $_SESSION['usuario_logado'] = $authResult['siape'];
+        $_SESSION['nome_usuario_logado'] = $authResult['nome'];
+        $_SESSION['login_success'] = "Login realizado com sucesso!";
         
-        // Redireciona para a sua página principal após o login bem-sucedido
-        // O caminho correto do login.php (telas/auth/) para principal.php (telas/professor/)
-        header("Location: ../professor/principal.php");
-        exit; // Garante que o script pare de executar após o redirecionamento
+        // Redireciona para a página principal no MESMO DIRETÓRIO.
+        header("Location: principal.php");
+        exit; // CRUCIAL: Impede que qualquer outra coisa seja enviada.
     } else {
-        // Se a autenticação falhou, define uma mensagem de erro na sessão
         $_SESSION['login_error'] = "SIAPE ou senha incorretos.";
-        header("Location: login.php"); // Redireciona de volta para a mesma página com a mensagem de erro
-        exit; // Garante que o script pare de executar
+        header("Location: login.php");
+        exit;
     }
 }
 // --- FIM DA LÓGICA PHP ---
@@ -151,8 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             transform: translateY(-50%);
             cursor: pointer;
             user-select: none;
-            /* Ícone de olho inicial */
-            content: "👁️"; /* Não funciona diretamente no CSS, precisa de JS */
+            content: "👁️";
         }
 
         .login-button {
@@ -216,7 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin: 20px 0;
         }
 
-        /* Estilos para mensagens de feedback */
         .error-message {
             color: red;
             text-align: center;
@@ -245,15 +244,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <p style="text-align: center; color: #555; margin-bottom: 20px;">Acesse ao SUAP IFGOIANO:</p>
 
             <?php
-            // Exibe a mensagem de sucesso do cadastro (se houver)
             if (isset($_SESSION['cadastro_success'])) {
                 echo '<p class="success-message">' . $_SESSION['cadastro_success'] . '</p>';
-                unset($_SESSION['cadastro_success']); // Limpa a mensagem após exibir
+                unset($_SESSION['cadastro_success']);
             }
-            // Exibe a mensagem de erro do login (se houver)
             if (isset($_SESSION['login_error'])) {
                 echo '<p class="error-message">' . $_SESSION['login_error'] . '</p>';
-                unset($_SESSION['login_error']); // Limpa a mensagem após exibir
+                unset($_SESSION['login_error']);
             }
             ?>
 
@@ -289,10 +286,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             const toggleIcon = document.querySelector(".password-toggle");
             if (passwordInput.type === "password") {
                 passwordInput.type = "text";
-                toggleIcon.textContent = "👁️‍🗨️"; // Ícone para "mostrar"
+                toggleIcon.textContent = "👁️‍🗨️";
             } else {
                 passwordInput.type = "password";
-                toggleIcon.textContent = "👁️"; // Ícone para "esconder"
+                toggleIcon.textContent = "👁️";
             }
         }
     </script>

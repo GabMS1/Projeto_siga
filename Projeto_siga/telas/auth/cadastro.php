@@ -1,53 +1,45 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\cadastro.php
 
-// Inicia a sessão PHP, fundamental para usar $_SESSION para mensagens
+// ATENÇÃO CRÍTICA: SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 };
+// Remova as linhas de ini_set daqui se não precisar mais depurar cadastro
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 
-// Inclui a classe Professor (Servico) para usar a lógica de negócio
 require_once __DIR__ . '/../../negocio/ProfessorServico.php';
 
-// --- INÍCIO DA LÓGICA PHP PARA PROCESSAR O FORMULÁRIO ---
-// Verifica se a requisição é um POST (ou seja, o formulário foi submetido)
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $professor = new Professor(); // Cria uma nova instância da classe de serviço
-
-    // Captura os dados enviados pelo formulário via POST
+    $professor = new Professor();
     $siape = $_POST['siape_prof'] ?? '';
     $nome = $_POST['nome'] ?? '';
     $senha = $_POST['senha'] ?? '';
 
-    // Define os dados no objeto Professor
     $professor->set("siape_prof", $siape);
     $professor->set("nome", $nome);
     $professor->set("senha", $senha);
 
-    // Validação básica: verifica se algum campo está vazio
     if (empty($siape) || empty($nome) || empty($senha)) {
         $_SESSION['cadastro_error'] = "Todos os campos são obrigatórios.";
-        header("Location: cadastro.php"); // Redireciona de volta para a mesma página
+        header("Location: cadastro.php");
         exit;
     }
 
-    // Tenta cadastrar o professor usando o método da classe de serviço
     if ($professor->cadastrar()) {
-        // Se o cadastro foi bem-sucedido, define uma mensagem de sucesso na sessão
         $_SESSION['cadastro_success'] = "Professor cadastrado com sucesso! Faça seu login.";
-        header("Location: login.php"); // Redireciona para a página de login
-        exit; // Garante que o script pare de executar após o redirecionamento
+        header("Location: login.php");
+        exit;
     } else {
-        // Se o cadastro falhou, a mensagem de erro já deve ter sido definida em ProfessorServico ou ProfessorDAO
-        // Se por algum motivo não houver uma mensagem específica, define uma genérica
         if (!isset($_SESSION['cadastro_error'])) {
             $_SESSION['cadastro_error'] = "Erro ao cadastrar professor. Tente novamente.";
         }
-        header("Location: cadastro.php"); // Redireciona de volta para a mesma página com a mensagem de erro
-        exit; // Garante que o script pare de executar
+        header("Location: cadastro.php");
+        exit;
     }
 }
-// --- FIM DA LÓGICA PHP ---
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -55,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <title>Cadastro</title>
     <style>
-        /* Estilos CSS fornecidos por você */
+        /* ... seu CSS ... */
         body {
             font-family: sans-serif;
             margin: 0;
@@ -246,10 +238,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h2 class="login-title">Cadastro de Professor</h2>
 
             <?php
-            // Exibe a mensagem de erro (se existir) vinda da sessão
             if (isset($_SESSION['cadastro_error'])) {
                 echo '<p class="error-message">' . $_SESSION['cadastro_error'] . '</p>';
-                unset($_SESSION['cadastro_error']); // Limpa a mensagem após exibir
+                unset($_SESSION['cadastro_error']);
             }
             ?>
 

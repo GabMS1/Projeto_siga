@@ -1,17 +1,18 @@
-<?php
-// C:\xampp\htdocs\Projeto_trabalho\telas\professor\principal.php
+﻿<?php
+// C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\telas\auth\principal.php
 
-// Inicia a sessão PHP
+// ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Inclui a classe de Conexão para acessar o banco de dados
-require_once __DIR__ . '/../../DAO/Conexao.php'; // Caminho corrigido para Conexao.php
+// Inclui a classe de Conexão para acessar o banco de dados.
+require_once __DIR__ . '/../../DAO/Conexao.php'; 
 
 // Protege acesso: se o usuário não estiver logado, redireciona para a página de login
 if (!isset($_SESSION['usuario_logado'])) {
-    header("Location: ../auth/login.php"); // Caminho corrigido para o login.php
+    // Redireciona para login.php que está no MESMO DIRETÓRIO.
+    header("Location: login.php");
     exit();
 }
 
@@ -29,8 +30,9 @@ $totalTurmas = 0;
 $conexao = new Conexao();
 $conn = $conexao->get_connection();
 
-if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
-    // Buscar dados reais
+if ($conn) {
+    // Buscar dados reais usando Prepared Statements para segurança
+
     // Disciplinas
     $stmt1 = $conn->prepare("SELECT COUNT(*) AS total FROM disciplina WHERE siape_prof = ?");
     if ($stmt1) {
@@ -44,7 +46,6 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
     } else {
         error_log("Erro ao preparar query de Disciplinas: " . $conn->error);
     }
-
 
     // Relatórios
     $stmt2 = $conn->prepare("SELECT COUNT(*) AS total FROM relatorio WHERE siape_prof = ?");
@@ -61,8 +62,6 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
     }
 
     // Reposições pendentes
-    // Ajuste aqui se a estrutura da sua tabela de reposições for diferente,
-    // garantindo que siape_prof esteja diretamente na tabela 'prof_ausente'
     $stmt3 = $conn->prepare("SELECT COUNT(*) AS total FROM programada WHERE id_ass_ausente IN 
                             (SELECT id_ass_ausente FROM prof_ausente WHERE siape_prof = ?)");
     if ($stmt3) {
@@ -77,7 +76,6 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
         error_log("Erro ao preparar query de Reposições Pendentes: " . $conn->error);
     }
 
-
     // Turmas distintas (associadas a disciplinas do professor)
     $stmt4 = $conn->prepare("SELECT COUNT(DISTINCT t.id_turma) AS total 
                             FROM turma t JOIN disciplina d ON t.id_disciplina = d.id_disciplina 
@@ -91,9 +89,8 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
         }
         $stmt4->close();
     } else {
-        error_log("Erro ao preparar query de Turmas: " . $conn->error);
+    error_log("Erro ao preparar query de Turmas: " . $conn->error);
     }
-
 
     // Últimos Relatórios
     $ultimosRelatorios = [];
@@ -109,7 +106,6 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
     } else {
         error_log("Erro ao preparar query de Últimos Relatórios: " . $conn->error);
     }
-
 
     // Reposições Agendadas
     $reposicoesAgendadas = [];
@@ -127,12 +123,10 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
         error_log("Erro ao preparar query de Reposições Agendadas: " . $conn->error);
     }
 
-    $conexao->close(); // Fecha a conexão após todas as operações
+    $conexao->close();
 } else {
-    // Se a conexão falhou, os contadores permanecerão em 0 e as listas vazias
     error_log("Principal.php: Conexão com o banco de dados falhou.");
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -141,6 +135,7 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Painel do Professor</title>
     <style>
+        /* ... seu CSS ... */
         body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; background-color: #f4f7f8; }
         .sidebar { width: 220px; height: 100vh; background-color: #386641; color: white; padding-top: 30px; position: fixed; }
         .sidebar h2 { text-align: center; margin-bottom: 20px; font-size: 22px; }
@@ -182,7 +177,7 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
         }
 
         .sidebar li {
-            padding: 8px 20px; /* Reduzi um pouco o padding para ficar mais compacto */
+            padding: 8px 20px;
             margin-bottom: 5px;
         }
 
@@ -197,11 +192,11 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
         }
 
         .sidebar a:hover {
-            background-color: #4d774e; /* Verde mais claro para hover */
+            background-color: #4d774e;
         }
 
         .sidebar a:active {
-            background-color: #2a5133; /* Verde mais escuro para clique */
+            background-color: #2a5133;
         }
         .card-buttons {
             display: flex;
@@ -244,12 +239,15 @@ if ($conn) { // Somente tenta buscar os dados se a conexão for bem-sucedida
     <h2>Professor</h2>
     <ul>
         <li><a href="principal.php">📋 Dashboard</a></li>
+        <!-- ATENÇÃO: Estes links pressupõem que esses arquivos estão na mesma pasta (telas/auth/). -->
+        <!-- Se você mover disciplinas.php, reposicoes.php, etc. para outras pastas, ajuste o href. -->
         <li><a href="disciplinas.php">📚 Disciplinas</a></li>
         <li><a href="reposicoes.php">🔁 Reposições</a></li>
         <li><a href="relatorios.php">📄 Relatórios</a></li>
         <li><a href="medias.php">📈 Médias</a></li>
         <li><a href="ajuda.php">❓ Ajuda</a></li>
-        <li><a href="../auth/logout.php">🚪 Sair</a></li> </ul>
+        <li><a href="logout.php">🚪 Sair</a></li>
+    </ul>
 </div>
 
 <div class="main">
