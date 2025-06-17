@@ -1,51 +1,65 @@
 ﻿<?php
-// C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\telas\auth\login.php
+// C:\xampp\htdocs\Projeto_siga\telas\auth\login.php
 
-// ATENÇÃO: ESTAS LINHAS DE DEBUG ESTÃO ATIVADAS. ELAS DEVEM SER AS PRIMEIRAS DO ARQUIVO.
-// Qualquer coisa (incluindo espaços invisíveis ou "aqui. AQUI!!") ANTES delas
-// ou antes de session_start() VAI CAUSAR ERROS de "headers already sent".
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
+ini_set('display_errors', 1); // Ativa a exibição de erros (útil para depuração)
+ini_set('display_startup_errors', 1); // Ativa a exibição de erros na inicialização
+error_reporting(E_ALL); // Reporta todos os tipos de erros PHP
 
-// Inicia a sessão PHP. DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    session_start(); // Inicia a sessão PHP se ainda não estiver iniciada.
 };
 
-// Inclui a classe Professor (Servico).
+// Inclui as classes de serviço para Professores e Administradores.
+// Isso permite que a lógica de autenticação de ambos os tipos de usuário seja acessível.
 require_once __DIR__ . '/../../negocio/ProfessorServico.php';
+require_once __DIR__ . '/../../negocio/AdministradorServico.php';
 
-// --- INÍCIO DA LÓGICA PHP PARA PROCESSAR O FORMULÁRIO ---
+// Verifica se a requisição HTTP é um POST (ou seja, o formulário de login foi submetido).
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $siape = $_POST['siape'] ?? '';
-    $senha = $_POST['senha'] ?? '';
+    $siape = $_POST['siape'] ?? ''; // Obtém o SIAPE digitado no formulário.
+    $senha = $_POST['senha'] ?? ''; // Obtém a senha digitada no formulário.
 
+    // Validação básica: verifica se SIAPE e senha foram preenchidos.
     if (empty($siape) || empty($senha)) {
-        $_SESSION['login_error'] = "SIAPE e senha são obrigatórios.";
-        header("Location: login.php");
-        exit;
+        $_SESSION['login_error'] = "SIAPE e senha são obrigatórios."; // Mensagem de erro.
+        header("Location: login.php"); // Redireciona de volta para a página de login.
+        exit; // Encerra o script.
     }
 
-    $professorServico = new Professor();
-
-    $authResult = $professorServico->autenticar($siape, $senha);
-
-    if ($authResult) {
-        $_SESSION['usuario_logado'] = $authResult['siape'];
-        $_SESSION['nome_usuario_logado'] = $authResult['nome'];
-        $_SESSION['login_success'] = "Login realizado com sucesso!";
-        
-        // Redireciona para a página principal no MESMO DIRETÓRIO.
-        header("Location: principal.php");
-        exit; // CRUCIAL: Impede que qualquer outra coisa seja enviada.
-    } else {
-        $_SESSION['login_error'] = "SIAPE ou senha incorretos.";
-        header("Location: login.php");
-        exit;
+    // --- Tenta autenticar como ADMINISTRADOR primeiro ---
+    $adminServico = new AdministradorServico(); // Cria uma instância do serviço de Administrador.
+    $adminAuth = $adminServico->autenticar($siape, $senha); // Tenta autenticar o usuário como admin.
+    
+    if ($adminAuth) {
+        // Se a autenticação como administrador for bem-sucedida:
+        $_SESSION['usuario_logado'] = $siape;                   // Armazena o SIAPE na sessão.
+        $_SESSION['nome_usuario_logado'] = $adminAuth['nome'];  // Armazena o nome do admin na sessão.
+        $_SESSION['tipo_usuario'] = 'admin';                    // Define o tipo de usuário na sessão. CRUCIAL para controle de acesso.
+        $_SESSION['login_success'] = "Login como administrador realizado com sucesso!"; // Mensagem de sucesso.
+        header("Location: principal_adm.php"); // Redireciona para o painel do administrador.
+        exit; // Encerra o script.
     }
+
+    // --- Se não for admin, tenta autenticar como PROFESSOR ---
+    $professorServico = new ProfessorServico(); // Cria uma instância do serviço de Professor.
+    $profAuth = $professorServico->autenticar($siape, $senha); // Tenta autenticar o usuário como professor.
+
+    if ($profAuth) {
+        // Se a autenticação como professor for bem-sucedida:
+        $_SESSION['usuario_logado'] = $siape;                   // Armazena o SIAPE na sessão.
+        $_SESSION['nome_usuario_logado'] = $profAuth['nome'];   // Armazena o nome do professor na sessão.
+        $_SESSION['tipo_usuario'] = 'professor';                // Define o tipo de usuário na sessão. CRUCIAL para controle de acesso.
+        $_SESSION['login_success'] = "Login realizado com sucesso!"; // Mensagem de sucesso.
+        header("Location: principal.php"); // Redireciona para o painel do professor.
+        exit; // Encerra o script.
+    }
+
+    // --- Se nenhuma autenticação for bem-sucedida ---
+    $_SESSION['login_error'] = "SIAPE ou senha incorretos."; // Mensagem de erro genérica.
+    header("Location: login.php"); // Redireciona de volta para a página de login.
+    exit; // Encerra o script.
 }
-// --- FIM DA LÓGICA PHP ---
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -54,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SUAP IF Goiano</title>
     <style>
-        /* Estilos CSS fornecidos por você */
+        /* Estilos CSS (mantidos conforme seu arquivo original) */
         body {
             font-family: sans-serif;
             margin: 0;
@@ -244,13 +258,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <p style="text-align: center; color: #555; margin-bottom: 20px;">Acesse ao SUAP IFGOIANO:</p>
 
             <?php
+            // Exibe mensagem de sucesso de cadastro (se houver vindo do cadastro.php ou cadastro_adm.php).
             if (isset($_SESSION['cadastro_success'])) {
                 echo '<p class="success-message">' . $_SESSION['cadastro_success'] . '</p>';
-                unset($_SESSION['cadastro_success']);
+                unset($_SESSION['cadastro_success']); // Limpa a mensagem após exibir.
             }
+            // Exibe mensagem de erro de login (se houver).
             if (isset($_SESSION['login_error'])) {
                 echo '<p class="error-message">' . $_SESSION['login_error'] . '</p>';
-                unset($_SESSION['login_error']);
+                unset($_SESSION['login_error']); // Limpa a mensagem após exibir.
             }
             ?>
 
@@ -281,15 +297,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 
     <script>
+        // Função JavaScript para alternar a visibilidade da senha.
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById("senha");
             const toggleIcon = document.querySelector(".password-toggle");
             if (passwordInput.type === "password") {
                 passwordInput.type = "text";
-                toggleIcon.textContent = "👁️‍🗨️";
+                toggleIcon.textContent = "👁️‍🗨️"; // Altera o ícone para "olho aberto com risco"
             } else {
                 passwordInput.type = "password";
-                toggleIcon.textContent = "👁️";
+                toggleIcon.textContent = "👁️"; // Altera o ícone para "olho fechado"
             }
         }
     </script>

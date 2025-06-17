@@ -88,3 +88,7 @@ CREATE INDEX idx_turma_professor ON turma(siape_prof);
 CREATE INDEX idx_relatorio_professor ON relatorio(siape_prof);
 
 ALTER TABLE professor ADD senha VARCHAR(20);
+
+
+ALTER TABLE admin
+ADD COLUMN siape_login VARCHAR(20) UNIQUE NOT NULL AFTER id_adm;
