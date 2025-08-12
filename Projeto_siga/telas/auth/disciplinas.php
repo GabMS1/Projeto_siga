@@ -1,176 +1,143 @@
 <?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\disciplinas.php
 
-// ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(); // Inicia a sessão PHP se ainda não estiver iniciada.
+    session_start();
 }
 
-// Inclui o serviço de Disciplina para listar as disciplinas.
 require_once __DIR__ . '/../../negocio/DisciplinaServico.php';
 
-// --- PROTEÇÃO DE ROTA ---
-// Verifica se o usuário está logado E se o tipo de usuário é 'professor'.
-// Apenas professores têm permissão para acessar esta página.
-if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'professor') {
-    $_SESSION['login_error'] = "Acesso negado. Faça login como professor para ver suas disciplinas.";
-    header("Location: login.php"); // Redireciona para a página de login.
-    exit(); // Encerra o script.
+if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin') {
+    $_SESSION['login_error'] = "Acesso negado. Faça login como administrador.";
+    header("Location: login.php");
+    exit();
 }
 
-// Pega o SIAPE do professor logado da sessão para buscar suas disciplinas.
-$siape_professor_logado = $_SESSION['usuario_logado'];
+$disciplinaServico = new DisciplinaServico();
+$disciplinas = [];
+$mensagem = "";
+$sucesso = false;
 
-$disciplinas = []; // Inicializa um array vazio para armazenar as disciplinas.
-$mensagem = ""; // Para mensagens de feedback
-
-try {
-    $disciplinaServico = new DisciplinaServico();
-    // Tenta listar as disciplinas do professor logado.
-    $disciplinas = $disciplinaServico->listarDisciplinas((int)$siape_professor_logado);
-
-    if (empty($disciplinas)) {
-        $mensagem = "Nenhuma disciplina cadastrada para este professor.";
+// Lógica para lidar com a ação de exclusão via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['acao']) && $_POST['acao'] === 'excluir' && isset($_POST['id_excluir'])) {
+        $id_excluir = trim($_POST['id_excluir']);
+        if ($disciplinaServico->excluirDisciplina($id_excluir)) {
+            $mensagem = "Disciplina excluída com sucesso!";
+            $sucesso = true;
+        } else {
+            $mensagem = "Erro ao excluir a disciplina.";
+            $sucesso = false;
+        }
     }
+}
+
+// Carrega a lista de disciplinas para exibição
+try {
+    $disciplinas = $disciplinaServico->listarDisciplinas();
 } catch (Exception $e) {
-    // Captura qualquer exceção que possa ocorrer.
-    $mensagem = "Erro ao carregar as disciplinas: " . $e->getMessage();
+    $mensagem = "Erro ao carregar a lista de disciplinas.";
+    $sucesso = false;
     error_log("Erro em disciplinas.php: " . $e->getMessage());
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Minhas Disciplinas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Disciplinas</title>
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            background-color: #f4f7f8;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Alinha ao topo para permitir scroll */
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            box-sizing: border-box;
-            text-align: center;
-        }
-        h1 {
-            color: #386641;
-            margin-bottom: 25px;
-            font-size: 2.2em;
-        }
-        .message {
-            margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .error-message {
-            color: red;
-            background-color: #ffe0e0;
-            border: 1px solid red;
-        }
-        .success-message {
-            color: green;
-            background-color: #e0ffe0;
-            border: 1px solid green;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #386641;
-            color: white;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 10px 20px;
-            background-color: #2a9d8f;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        .back-link:hover {
-            background-color: #268074;
-        }
-        .add-discipline-button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #386641;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        .add-discipline-button:hover {
-            background-color: #4d774e;
-        }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; background-color: #f4f7f8; }
+        .sidebar { width: 220px; height: 100vh; background-color: #386641; color: white; padding-top: 30px; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: white; }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar li { padding: 8px 20px; margin-bottom: 5px; }
+        .sidebar a { color: white; text-decoration: none; font-weight: bold; display: block; padding: 8px 12px; border-radius: 4px; transition: background-color 0.3s; }
+        .sidebar a:hover { background-color: #4d774e; }
+        .sidebar a.active { background-color: #2a5133; }
+        
+        .main { margin-left: 220px; padding: 30px; flex: 1; width: calc(100% - 220px); }
+        .main h1 { color: #2a9d8f; margin-bottom: 30px; }
+        .btn-add { padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; background-color: #386641; color: white; }
+        .btn-add:hover { background-color: #2a5133; }
+        
+        .table-container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; color: #555; }
+        tr:hover { background-color: #f9f9f9; }
+        
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; font-weight: bold; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .actions-cell { display: flex; gap: 5px; }
+        .btn-edit, .btn-delete { padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 14px; color: white; }
+        .btn-edit { background-color: #007bff; }
+        .btn-edit:hover { background-color: #0069d9; }
+        .btn-delete { background-color: #dc3545; }
+        .btn-delete:hover { background-color: #c82333; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Minhas Disciplinas</h1>
+<div class="sidebar">
+    <h2>Administrador</h2>
+    <ul>
+        <li><a href="principal_adm.php">📊 Dashboard</a></li>
+        <li><a href="professores.php">🧑‍🏫 Gerenciar Professores</a></li>
+        <li><a href="administradores.php">⚙️ Gerenciar Admins</a></li>
+        <li><a href="disciplinas.php" class="active">📚 Gerenciar Disciplinas</a></li>
+        <li><a href="logout.php">🚪 Sair</a></li>
+    </ul>
+</div>
 
-    <?php if (!empty($mensagem)): ?>
-        <p class="message <?php echo strpos($mensagem, 'Erro') !== false ? 'error-message' : 'success-message'; ?>">
+<div class="main">
+    <h1>Gerenciar Disciplinas</h1>
+
+    <?php if ($mensagem): ?>
+        <div class="alert <?php echo $sucesso ? 'alert-success' : 'alert-danger'; ?>">
             <?php echo htmlspecialchars($mensagem); ?>
-        </p>
+        </div>
     <?php endif; ?>
 
-    <?php if (!empty($disciplinas)): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome da Disciplina</th>
-                    <th>Carga Horária</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($disciplinas as $disciplina): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($disciplina['id_disciplina']); ?></td>
-                    <td><?php echo htmlspecialchars($disciplina['nome_disciplina']); ?></td>
-                    <td><?php echo htmlspecialchars(substr($disciplina['ch'], 0, 5)); ?></td> <!-- Mostra apenas HH:MM -->
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php else: ?>
-        <p>Nenhuma disciplina encontrada.</p>
-    <?php endif; ?>
+    <a href="cadastrar_disciplina.php" class="btn-add">Cadastrar Nova Disciplina</a>
 
-    <a href="cadastrar_disciplina.php" class="add-discipline-button">Cadastrar Nova Disciplina</a>
-    <a href="principal.php" class="back-link">← Voltar ao Dashboard</a>
+    <div class="table-container">
+        <h2>Lista de Disciplinas (Total: <?php echo count($disciplinas); ?>)</h2>
+        <?php if (!empty($disciplinas)): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome da Disciplina</th>
+                        <th>Carga Horária</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($disciplinas as $disciplina): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($disciplina['id_disciplina']); ?></td>
+                            <td><?php echo htmlspecialchars($disciplina['nome_disciplina']); ?></td>
+                            <td><?php echo htmlspecialchars(substr($disciplina['ch'], 0, 5)); ?></td>
+                            <td class="actions-cell">
+                                <a href="editar_disciplina.php?id=<?php echo htmlspecialchars($disciplina['id_disciplina']); ?>" class="btn-edit">Editar</a>
+                                <form action="disciplinas.php" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir a disciplina <?php echo htmlspecialchars($disciplina['nome_disciplina']); ?>?');">
+                                    <input type="hidden" name="acao" value="excluir">
+                                    <input type="hidden" name="id_excluir" value="<?php echo htmlspecialchars($disciplina['id_disciplina']); ?>">
+                                    <button type="submit" class="btn-delete">Excluir</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>Nenhuma disciplina encontrada. Use o botão acima para cadastrar uma nova.</p>
+        <?php endif; ?>
+    </div>
 </div>
 
 </body>
