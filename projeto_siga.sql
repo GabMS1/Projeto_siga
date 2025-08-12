@@ -1,84 +1,90 @@
-CREATE DATABASE projeto_siga;
+CREATE database projeto_siga;
 
-CREATE TABLE professor (
-    siape_prof INT PRIMARY KEY,
-    nome VARCHAR(50),
-    id_materia VARCHAR(20),
-    id_turmas VARCHAR(20)
+USE `projeto_siga`;
+
+-- Tabela de professores
+CREATE TABLE `professor` (
+    `siape_prof` VARCHAR(20) NOT NULL PRIMARY KEY,
+    `nome` VARCHAR(255) NOT NULL,
+    `senha` VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE disciplina (
-    id_disciplina INT AUTO_INCREMENT PRIMARY KEY,
-    nome_disciplina VARCHAR(50),
-    ch TIME,
-    siape_prof INT,
-    FOREIGN KEY (siape_prof) REFERENCES professor(siape_prof)
+-- Tabela de administradores
+CREATE TABLE `admin` (
+    `id_adm` INT AUTO_INCREMENT PRIMARY KEY,
+    `siape_login` VARCHAR(20) NOT NULL UNIQUE,
+    `nome` VARCHAR(255) NOT NULL,
+    `senha_adm` VARCHAR(255) NOT NULL,
+    `cargo` ENUM('Coordenador', 'Diretor', 'Secretário') NOT NULL
 );
 
-CREATE TABLE turma (
-    id_turma INT PRIMARY KEY,
-    curso VARCHAR(30),
-    serie VARCHAR(10),
-    id_disciplina INT,
-    siape_prof INT,
-    FOREIGN KEY (id_disciplina) REFERENCES disciplina(id_disciplina),
-    FOREIGN KEY (siape_prof) REFERENCES professor(siape_prof)
+-- Tabela de disciplinas
+CREATE TABLE `disciplina` (
+    `id_disciplina` INT AUTO_INCREMENT PRIMARY KEY,
+    `nome_disciplina` VARCHAR(255) NOT NULL,
+    `ch` INT NOT NULL,
+    `siape_prof` VARCHAR(20),
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`)
 );
 
-CREATE TABLE reposicao (
-    id_repos INT AUTO_INCREMENT PRIMARY KEY,
-    data_ DATETIME,
-    nao_programada VARCHAR(60)
+-- Tabela de turmas
+CREATE TABLE `turma` (
+    `id_turma` INT PRIMARY KEY,
+    `curso` VARCHAR(255) NOT NULL,
+    `serie` ENUM('1º', '2º', '3º', '4º') NOT NULL,
+    `id_disciplina` INT,
+    FOREIGN KEY (`id_disciplina`) REFERENCES `disciplina`(`id_disciplina`)
 );
 
-CREATE TABLE prof_subs (
-    id_ass_subs INT AUTO_INCREMENT PRIMARY KEY,
-    ass_subs VARCHAR(50),
-    siape_prof INT,
-    FOREIGN KEY (siape_prof) REFERENCES professor(siape_prof)
+-- Tabela para registros de professores ausentes
+CREATE TABLE `prof_ausente` (
+    `id_ass_ausente` INT AUTO_INCREMENT PRIMARY KEY,
+    `ass_ausente` VARCHAR(255) NOT NULL,
+    `siape_prof` VARCHAR(20),
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`)
 );
 
-CREATE TABLE prof_ausente (
-    id_ass_ausente INT AUTO_INCREMENT PRIMARY KEY,
-    ass_ausente VARCHAR(50),
-    siape_prof INT,
-    FOREIGN KEY (siape_prof) REFERENCES professor(siape_prof)
+-- Tabela para registros de professores substitutos
+CREATE TABLE `prof_subs` (
+    `id_ass_subs` INT AUTO_INCREMENT PRIMARY KEY,
+    `ass_subs` VARCHAR(255) NOT NULL,
+    `siape_prof` VARCHAR(20),
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`)
 );
 
-CREATE TABLE programada (
-    id_progra INT AUTO_INCREMENT PRIMARY KEY,
-    dia DATE,
-    horario TIME,
-    autor_gov VARCHAR(30),
-    id_turma INT,
-    id_disciplina INT,
-    id_ass_subs INT,
-    id_ass_ausente INT,
-    FOREIGN KEY (id_turma) REFERENCES turma(id_turma),
-    FOREIGN KEY (id_disciplina) REFERENCES disciplina(id_disciplina),
-    FOREIGN KEY (id_ass_subs) REFERENCES prof_subs(id_ass_subs),
-    FOREIGN KEY (id_ass_ausente) REFERENCES prof_ausente(id_ass_ausente)
+-- Tabela para reposições
+CREATE TABLE `programada` (
+    `id_progra` INT AUTO_INCREMENT PRIMARY KEY,
+    `dia` DATE NOT NULL,
+    `horario` TIME NOT NULL,
+    `autor_gov` VARCHAR(255),
+    `id_turma` INT,
+    `id_disciplina` INT,
+    `id_ass_subs` INT,
+    `id_ass_ausente` INT,
+    FOREIGN KEY (`id_turma`) REFERENCES `turma`(`id_turma`),
+    FOREIGN KEY (`id_disciplina`) REFERENCES `disciplina`(`id_disciplina`),
+    FOREIGN KEY (`id_ass_subs`) REFERENCES `prof_subs`(`id_ass_subs`),
+    FOREIGN KEY (`id_ass_ausente`) REFERENCES `prof_ausente`(`id_ass_ausente`)
 );
 
-CREATE TABLE admin (
-    id_adm INT AUTO_INCREMENT PRIMARY KEY,
-    senha_adm VARCHAR(20),
-    nome VARCHAR(50),
-    cargo VARCHAR(30)
+-- Tabela de relatórios
+CREATE TABLE `relatorio` (
+    `id_relatorio` INT AUTO_INCREMENT PRIMARY KEY,
+    `aulas_substituidas` VARCHAR(255),
+    `aulas_cedidas` VARCHAR(255),
+    `siape_prof` VARCHAR(20),
+    `id_progra` INT,
+    `id_adm` INT,
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`),
+    FOREIGN KEY (`id_progra`) REFERENCES `programada`(`id_progra`),
+    FOREIGN KEY (`id_adm`) REFERENCES `admin`(`id_adm`)
 );
 
-CREATE TABLE relatorio (
-    id_relatorio INT AUTO_INCREMENT PRIMARY KEY,
-    aulas_substituidas VARCHAR(50),
-    aulas_cedidas VARCHAR(50),
-    siape_prof INT,
-    id_repos INT,
-    id_progra INT,
-    id_adm INT,
-    FOREIGN KEY (siape_prof) REFERENCES professor(siape_prof),
-    FOREIGN KEY (id_repos) REFERENCES reposicao(id_repos),
-    FOREIGN KEY (id_progra) REFERENCES programada(id_progra),
-    FOREIGN KEY (id_adm) REFERENCES admin(id_adm)
-);
-
-ALTER TABLE professor ADD senha VARCHAR(20);
+-- Adicionando índices para melhor performance
+CREATE INDEX idx_disciplina_professor ON `disciplina`(`siape_prof`);
+CREATE INDEX idx_turma_disciplina ON `turma`(`id_disciplina`);
+CREATE INDEX idx_relatorio_professor ON `relatorio`(`siape_prof`);
+CREATE INDEX idx_prof_ausente_siape ON `prof_ausente`(`siape_prof`);
+CREATE INDEX idx_programada_turma ON `programada`(`id_turma`);
+CREATE INDEX idx_programada_disciplina ON `programada`(`id_disciplina`);
