@@ -92,6 +92,52 @@ class ProgramadaDAO {
         $stmt->close();
         return $reposicoes;
     }
+    
+    /**
+     * Busca todas as solicitações de reposição pendentes de aprovação administrativa.
+     * Assume que uma solicitação é pendente se não há um registro de relatório associado.
+     *
+     * @return array Retorna um array de arrays associativos com as solicitações pendentes.
+     */
+    public function buscarTodasAusenciasPendentes() {
+        $ausencias_pendentes = [];
+        $sql = "
+            SELECT 
+                p.id_progra, 
+                p.dia, 
+                p.horario, 
+                t.curso,
+                t.serie,
+                d.nome_disciplina,
+                pa.siape_prof AS siape_ausente,
+                ps.siape_prof AS siape_substituto
+            FROM programada p
+            JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
+            JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
+            JOIN turma t ON p.id_turma = t.id_turma
+            JOIN disciplina d ON p.id_disciplina = d.id_disciplina
+            LEFT JOIN relatorio r ON p.id_progra = r.id_progra
+            WHERE r.id_progra IS NULL
+            ORDER BY p.dia ASC, p.horario ASC
+        ";
+        
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!$stmt) {
+            error_log("ProgramadaDAO->buscarTodasAusenciasPendentes: Erro ao preparar query - " . $this->conn->error);
+            return $ausencias_pendentes;
+        }
+        
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        
+        while ($linha = $resultado->fetch_assoc()) {
+            $ausencias_pendentes[] = $linha;
+        }
+        
+        $stmt->close();
+        return $ausencias_pendentes;
+    }
 
     /**
      * Fecha a conexão com o banco de dados.

@@ -1,4 +1,3 @@
-```php
 <?php
 // C:\xampp\htdocs\Projeto_siga\negocio\AusenciaServico.php
 
@@ -8,6 +7,7 @@ require_once __DIR__ . '/../DAO/ProfSubsDAO.php';
 require_once __DIR__ . '/../DAO/ProgramadaDAO.php';
 require_once __DIR__ . '/../DAO/DisciplinaDAO.php';
 require_once __DIR__ . '/../DAO/TurmaDAO.php';
+require_once __DIR__ . '/../DAO/Conexao.php';
 
 /**
  * A classe AusenciaServico lida com a lógica de negócio relacionada ao registro
@@ -56,7 +56,7 @@ class AusenciaServico {
             $sucesso = $programadaDAO->cadastrar(
                 $dados['dia'],
                 $dados['horario'],
-                $dados['autor_gov'] ?? 'N/A', // O documento sugere que o professor ausente ou o substituto se responsabilize por essa parte
+                $dados['autor_gov'] ?? 'N/A',
                 $dados['id_turma'],
                 $dados['id_disciplina'],
                 $id_substituto,
@@ -91,9 +91,17 @@ class AusenciaServico {
      */
     public function listarReposicoesPorProfessor($siape_prof) {
         $programadaDAO = new ProgramadaDAO();
-        // Você precisará adicionar um método em ProgramadaDAO para buscar as reposições.
-        // A implementação desse método é um próximo passo.
-        return []; 
+        return $programadaDAO->buscarReposicoesPorProfessor((string)$siape_prof);
+    }
+    
+    /**
+     * Lista todas as solicitações de ausência pendentes de aprovação administrativa.
+     *
+     * @return array Um array de ausências pendentes.
+     */
+    public function listarTodasAusenciasPendentes() {
+        $programadaDAO = new ProgramadaDAO();
+        return $programadaDAO->buscarTodasAusenciasPendentes();
     }
 }
 ?>

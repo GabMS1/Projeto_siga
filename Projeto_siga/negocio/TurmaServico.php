@@ -4,8 +4,6 @@
 // Inclui o TurmaDAO para operações de banco de dados.
 require_once __DIR__ . '/../DAO/TurmaDAO.php';
 // Inclui o DisciplinaServico para poder listar as disciplinas disponíveis.
-// Nota: O caminho '__DIR__ . '/DisciplinaServico.php'' está correto porque
-// DisciplinaServico.php e TurmaServico.php estão na mesma pasta 'negocio'.
 require_once __DIR__ . '/DisciplinaServico.php';
 
 /**
@@ -31,7 +29,7 @@ class TurmaServico {
 
     /**
      * Realiza o cadastro de uma nova turma.
-     * Inclui validações de unicidade do ID da turma e existência das chaves estrangeiras.
+     * Inclui validações de unicidade do ID da turma e existência da chave estrangeira.
      * @return bool True se o cadastro for bem-sucedido, false caso contrário.
      */
     public function cadastrar() {
@@ -48,16 +46,16 @@ class TurmaServico {
         $turmaDAO->set("curso", $this->curso);
         $turmaDAO->set("serie", $this->serie);
         $turmaDAO->set("id_disciplina", (int)$this->id_disciplina); // Converte para INT
-        $turmaDAO->set("siape_prof", (int)$this->siape_prof);       // Converte para INT
 
         // Chama o método 'cadastrar' do TurmaDAO para salvar a turma no banco.
+        // Não é necessário passar siape_prof aqui.
         return $turmaDAO->cadastrar();
     }
 
     /**
      * Busca a lista de disciplinas para popular o dropdown no formulário de turma.
      * Reutiliza o DisciplinaServico para isso.
-     * @param int $siape_prof O SIAPE do professor logado.
+     * @param string $siape_prof O SIAPE do professor logado.
      * @return array Um array de disciplinas.
      */
     public function listarDisciplinasParaSelecao($siape_prof) {
@@ -68,7 +66,7 @@ class TurmaServico {
     /**
      * Lista todas as turmas associadas a um professor específico.
      * Este método chama o DAO para buscar os dados.
-     * @param int $siape_prof O SIAPE do professor para buscar as turmas.
+     * @param string $siape_prof O SIAPE do professor para buscar as turmas.
      * @return array Um array de turmas ou um array vazio se nenhuma for encontrada.
      */
     public function listarTurmas($siape_prof) {
@@ -80,4 +78,3 @@ class TurmaServico {
         return $turmas !== false ? $turmas : [];
     }
 }
-?>

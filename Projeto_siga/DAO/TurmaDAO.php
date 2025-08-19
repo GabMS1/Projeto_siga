@@ -14,7 +14,6 @@ class TurmaDAO {
     public $curso;
     public $serie;
     public $id_disciplina; // Chave estrangeira para a disciplina
-    public $siape_prof;    // Chave estrangeira para o professor
 
     /**
      * Define um valor para uma propriedade específica do DAO.
@@ -28,7 +27,7 @@ class TurmaDAO {
     /**
      * Cadastra uma nova turma no banco de dados.
      * Assume que as validações de unicidade e existência das chaves estrangeiras
-     * (id_disciplina, siape_prof) serão feitas na camada de serviço.
+     * (id_disciplina) serão feitas na camada de serviço.
      * @return bool True se o cadastro for bem-sucedido, false caso contrário.
      */
     public function cadastrar() {
@@ -42,8 +41,8 @@ class TurmaDAO {
         }
 
         // Prepara a consulta SQL para inserir uma nova turma.
-        // id_turma é fornecido, não é AUTO_INCREMENT.
-        $SQL = "INSERT INTO turma (id_turma, curso, serie, id_disciplina, siape_prof) VALUES (?, ?, ?, ?, ?)";
+        // O campo siape_prof não existe na tabela turma.
+        $SQL = "INSERT INTO turma (id_turma, curso, serie, id_disciplina) VALUES (?, ?, ?, ?)";
         $stmt = $conn->prepare($SQL);
 
         if (!$stmt) {
@@ -53,9 +52,8 @@ class TurmaDAO {
             return false;
         }
 
-        // 'isssi' indica: int, string, string, int, int
-        // id_turma (int), curso (string), serie (string), id_disciplina (int), siape_prof (int)
-        $stmt->bind_param("issii", $this->id_turma, $this->curso, $this->serie, $this->id_disciplina, $this->siape_prof);
+        // 'issi' indica: int, string, string, int
+        $stmt->bind_param("issi", $this->id_turma, $this->curso, $this->serie, $this->id_disciplina);
         $success = $stmt->execute();
 
         if (!$success) {
@@ -63,7 +61,7 @@ class TurmaDAO {
             if ($stmt->errno == 1062) { // Código de erro para entrada duplicada
                 $_SESSION['cadastro_turma_error'] = "O ID da turma já existe. Por favor, escolha outro.";
             } elseif ($stmt->errno == 1452) { // Código de erro para chave estrangeira inválida
-                 $_SESSION['cadastro_turma_error'] = "Disciplina ou Professor associado não encontrado. Verifique os dados.";
+                 $_SESSION['cadastro_turma_error'] = "Disciplina associada não encontrada. Verifique os dados.";
             } else {
                 $_SESSION['cadastro_turma_error'] = "Erro no banco de dados durante o cadastro da turma.";
             }
@@ -109,7 +107,7 @@ class TurmaDAO {
     /**
      * Busca todas as turmas associadas a um professor específico,
      * incluindo o nome da disciplina a que pertencem.
-     * @param int $siape_prof O SIAPE do professor.
+     * @param string $siape_prof O SIAPE do professor.
      * @return array|false Um array de arrays associativos com os dados das turmas,
      * ou um array vazio se nenhuma turma for encontrada, ou false em caso de erro na conexão.
      */
@@ -122,12 +120,11 @@ class TurmaDAO {
             return false;
         }
 
-        // Query para selecionar todas as turmas de um dado professor,
-        // juntando com a tabela de disciplina para pegar o nome da disciplina.
+        // QUERY CORRIGIDA: Agora faz o JOIN com 'disciplina' e filtra por 'd.siape_prof'.
         $SQL = "SELECT t.id_turma, t.curso, t.serie, d.nome_disciplina
                 FROM turma t
                 JOIN disciplina d ON t.id_disciplina = d.id_disciplina
-                WHERE t.siape_prof = ?";
+                WHERE d.siape_prof = ?";
         $stmt = $conn->prepare($SQL);
 
         if (!$stmt) {
@@ -137,7 +134,7 @@ class TurmaDAO {
             return false;
         }
 
-        $stmt->bind_param("i", $siape_prof); // Binda o SIAPE do professor como inteiro.
+        $stmt->bind_param("s", $siape_prof); // Binda o SIAPE do professor como string.
         $stmt->execute();
         $result = $stmt->get_result();
 

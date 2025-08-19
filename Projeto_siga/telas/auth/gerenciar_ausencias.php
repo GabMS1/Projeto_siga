@@ -7,7 +7,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Inclui o serviço de Ausência para listar as reposições.
-// É necessário incluir a classe que lida com a busca de ausências.
 require_once __DIR__ . '/../../negocio/AusenciaServico.php';
 
 // --- PROTEÇÃO DE ROTA ---
@@ -24,10 +23,7 @@ $mensagem = ""; // Para mensagens de feedback
 try {
     $ausenciaServico = new AusenciaServico();
     
-    // ATENÇÃO: É necessário implementar o método 'listarTodasAusenciasPendentes' no AusenciaServico
-    // e no ProgramadaDAO para que esta página funcione corretamente.
-    // A busca de reposições pendentes não existe na lógica atual.
-    // Este código assume que o método será criado e retornará um array.
+    // Agora o método listarTodasAusenciasPendentes() existe e pode ser chamado.
     $ausencias = $ausenciaServico->listarTodasAusenciasPendentes();
 
     if (empty($ausencias)) {

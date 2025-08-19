@@ -1,5 +1,5 @@
 ﻿<?php
-// C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\telas\auth\principal.php
+// C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\telas\auth\Principal.php
 
 // ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
@@ -8,6 +8,10 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Inclui a classe de Conexão para acessar o banco de dados.
 require_once __DIR__ . '/../../DAO/Conexao.php'; 
+// Inclui o ProfessorServico para contar e listar professores.
+require_once __DIR__ . '/../../negocio/ProfessorServico.php';
+// Inclui o AdministradorServico para contar e listar administradores (opcional, mas bom ter).
+require_once __DIR__ . '/../../negocio/AdministradorServico.php';
 
 // --- PROTEÇÃO DE ROTA ---
 // Verifica se o usuário está logado E se o tipo de usuário é 'professor'.
@@ -173,10 +177,11 @@ if ($conn) {
     <h2>Professor</h2>
     <ul>
         <li><a href="principal.php">📋 Dashboard</a></li>
-        <!-- ATENÇÃO: Estes links pressupõem que esses arquivos estão na mesma pasta (telas/auth/). -->
-        <!-- Se você mover disciplinas.php, reposicoes.php, etc. para outras pastas, ajuste o href. -->
         <li><a href="disciplinas.php">📚 Disciplinas</a></li>
-        <li><a href="reposicoes.php">🔁 Reposições</a></li>
+        
+        <li><a href="minhas_reposicoes.php">🔁 Minhas Reposições</a></li>
+        <li><a href="agendar_reposicao.php">🗓️ Agendar Reposição</a></li>
+
         <li><a href="relatorios.php">📄 Relatórios</a></li>
         <li><a href="medias.php">📈 Médias</a></li>
         <li><a href="ajuda.php">❓ Ajuda</a></li>
@@ -208,7 +213,7 @@ if ($conn) {
             <h3>Reposições Pendentes</h3>
             <p><?php echo $totalReposPendentes; ?></p>
             <div class="card-buttons">
-                <a href="reposicoes.php" class="btn-view">Ver Reposições</a>
+                <a href="minhas_reposicoes.php" class="btn-view">Ver Reposições</a>
                 <a href="agendar_reposicao.php" class="btn-add">+ Agendar</a>
             </div>
         </div>
