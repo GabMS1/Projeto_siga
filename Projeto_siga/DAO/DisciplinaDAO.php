@@ -42,6 +42,27 @@ class DisciplinaDAO {
         $stmt->close();
         return $disciplinas;
     }
+    
+    // NOVO MÉTODO
+    public function listarPorProfessor($siape_prof) {
+        $disciplinas = [];
+        $sql = "SELECT id_disciplina, nome_disciplina, ch FROM disciplina WHERE siape_prof = ? ORDER BY nome_disciplina ASC";
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!$stmt) {
+            error_log("DisciplinaDAO->listarPorProfessor: Erro ao preparar query - " . $this->conn->error);
+            throw new Exception("Erro ao preparar a busca de disciplinas por professor: " . $this->conn->error);
+        }
+
+        $stmt->bind_param("s", $siape_prof);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        while ($linha = $resultado->fetch_assoc()) {
+            $disciplinas[] = $linha;
+        }
+        $stmt->close();
+        return $disciplinas;
+    }
 
     public function buscarPorId($id) {
         $sql = "SELECT id_disciplina, nome_disciplina, ch FROM disciplina WHERE id_disciplina = ?";

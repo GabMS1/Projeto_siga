@@ -218,11 +218,10 @@ if ($conn) {
             </div>
         </div>
         <div class="card">
-            <h3>Relatórios Aprovados</h3>
-            <p><?php echo $totalRelatorios; ?></p>
+            <h3>Relatório de Reposições</h3>
+            <p>Gerar PDF</p>
             <div class="card-buttons">
-                <a href="relatorios.php" class="btn-view">Ver Relatórios</a>
-                <a href="cadastrar_relatorio.php" class="btn-add">+ Novo Relatório</a>
+                <a href="gerar_relatorio_pdf.php" class="btn-view" target="_blank">Gerar Relatório</a>
             </div>
         </div>
     </div>

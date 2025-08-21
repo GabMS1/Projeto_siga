@@ -60,7 +60,8 @@ class TurmaServico {
      */
     public function listarDisciplinasParaSelecao($siape_prof) {
         $disciplinaServico = new DisciplinaServico();
-        return $disciplinaServico->listarDisciplinas($siape_prof);
+        // CORREÇÃO AQUI: Chamar o método listarDisciplinasPorProfessor do DisciplinaServico
+        return $disciplinaServico->listarDisciplinasPorProfessor($siape_prof);
     }
 
     /**
