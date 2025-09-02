@@ -151,12 +151,15 @@ class ProgramadaDAO {
         $reposicoes = [];
         $sql = "
             SELECT 
+                p.id_progra,
                 p.dia, 
                 p.horario, 
                 t.curso,
                 t.serie,
                 d.nome_disciplina,
+                pa.ass_ausente AS nome_ausente,
                 pa.siape_prof AS siape_ausente,
+                ps.ass_subs AS nome_substituto,
                 ps.siape_prof AS siape_substituto
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
@@ -184,6 +187,28 @@ class ProgramadaDAO {
         return $reposicoes;
     }
 
+    /**
+     * Atualiza um registro de falta programada para torná-lo uma reposição.
+     * @param int $id_progra O ID da reposição agendada.
+     * @param int $id_ass_subs O ID do registro do professor substituto.
+     * @return bool Retorna TRUE se a atualização for bem-sucedida, ou FALSE em caso de falha.
+     */
+    public function atualizarFaltaParaReposicao($id_progra, $id_ass_subs) {
+        $sql = "UPDATE programada SET id_ass_subs = ? WHERE id_progra = ?";
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!$stmt) {
+            error_log("ProgramadaDAO->atualizarFaltaParaReposicao: Erro ao preparar query - " . $this->conn->error);
+            return false;
+        }
+        
+        $stmt->bind_param("ii", $id_ass_subs, $id_progra);
+        $result = $stmt->execute();
+        
+        $stmt->close();
+        return $result;
+    }
+    
     /**
      * Fecha a conexão com o banco de dados.
      */

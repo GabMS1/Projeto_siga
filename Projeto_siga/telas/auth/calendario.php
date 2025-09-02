@@ -10,6 +10,9 @@ if (!isset($_SESSION['usuario_logado'])) {
     header("Location: login.php");
     exit();
 }
+
+$siape_logado = $_SESSION['usuario_logado'];
+$nome_logado = $_SESSION['nome_usuario_logado'];
 ?>
 
 <!DOCTYPE html>
@@ -157,6 +160,22 @@ if (!isset($_SESSION['usuario_logado'])) {
             color: #777;
             font-style: italic;
         }
+        .modal-footer {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .btn-pegar-reposicao {
+            background-color: #386641;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-pegar-reposicao:hover {
+            background-color: #2a5133;
+        }
     </style>
 </head>
 <body>
@@ -198,6 +217,9 @@ if (!isset($_SESSION['usuario_logado'])) {
         <p><strong>Professor Substituto:</strong> <span id="modal-sub-prof"></span></p>
         <p><strong>Disciplina:</strong> <span id="modal-subject"></span></p>
         <p><strong>Turma:</strong> <span id="modal-class"></span></p>
+        <div class="modal-footer">
+            <button id="btn-pegar-reposicao" class="btn-pegar-reposicao" style="display: none;">Pegar Reposição</button>
+        </div>
     </div>
 </div>
 
@@ -210,13 +232,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('reposition-modal');
     const closeModal = document.querySelector('.close');
     const noEventsMessageEl = document.getElementById('no-events-message');
+    const btnPegarReposicao = document.getElementById('btn-pegar-reposicao');
+
+    const siapeLogado = '<?php echo $siape_logado; ?>';
+    const nomeLogado = '<?php echo addslashes($nome_logado); ?>';
 
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
     let eventosData = [];
 
     const fetchEventos = () => {
-        fetch('../api/reposicoes.php')
+        fetch('../../api/reposicoes.php')
             .then(response => {
                 console.log('Resposta da API recebida:', response);
                 if (!response.ok) {
@@ -284,9 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const eventEl = document.createElement('div');
                     eventEl.classList.add('event');
 
-                    if (evento.tipo_evento === 'falta') {
+                    if (evento.nome_substituto === null) {
                         eventEl.classList.add('event-falta');
-                        eventEl.textContent = `Falta: ${evento.horario.substring(0, 5)}`;
+                        eventEl.textContent = `Falta programada: ${evento.horario.substring(0, 5)}`;
                     } else {
                         eventEl.classList.add('event-reposicao');
                         eventEl.textContent = `Reposição: ${evento.horario.substring(0, 5)}`;
@@ -306,14 +332,56 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const showModal = (evento) => {
-        document.getElementById('modal-type').textContent = evento.tipo_evento === 'falta' ? 'Falta Programada' : 'Reposição de Aula';
+        document.getElementById('modal-type').textContent = evento.nome_substituto === null ? 'Falta Programada' : 'Reposição de Aula';
         document.getElementById('modal-date').textContent = evento.dia;
         document.getElementById('modal-time').textContent = evento.horario.substring(0, 5);
-        document.getElementById('modal-absent-prof').textContent = evento.siape_ausente;
-        document.getElementById('modal-sub-prof').textContent = evento.siape_substituto || 'Não há';
+        
+        // Exibir o nome do professor ausente e substituto
+        document.getElementById('modal-absent-prof').textContent = evento.nome_ausente || 'N/A';
+        document.getElementById('modal-sub-prof').textContent = evento.nome_substituto || 'Não há';
+        
         document.getElementById('modal-subject').textContent = evento.nome_disciplina;
         document.getElementById('modal-class').textContent = `${evento.curso} - ${evento.serie}`;
         modal.style.display = 'block';
+        
+        // Lógica para mostrar/esconder o botão "Pegar Reposição"
+        // O botão aparece apenas se for uma falta programada E o professor ausente não for o professor logado
+        if (evento.nome_substituto === null && evento.siape_ausente !== siapeLogado) {
+            btnPegarReposicao.style.display = 'block';
+            btnPegarReposicao.onclick = () => pegarReposicao(evento.id_progra);
+        } else {
+            btnPegarReposicao.style.display = 'none';
+        }
+    };
+
+    const pegarReposicao = (id_progra) => {
+        if (!confirm('Tem certeza que deseja pegar esta reposição?')) {
+            return;
+        }
+
+        const data = new URLSearchParams();
+        data.append('id_progra', id_progra);
+        data.append('siape_substituto', siapeLogado);
+        data.append('nome_substituto', nomeLogado);
+
+        fetch('../../api/pegar_reposicao.php', {
+            method: 'POST',
+            body: data
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('Reposição pega com sucesso!');
+                modal.style.display = 'none';
+                fetchEventos(); // Atualiza o calendário
+            } else {
+                alert('Erro ao pegar reposição: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro na requisição:', error);
+            alert('Erro na requisição. Verifique o console.');
+        });
     };
 
     prevBtn.addEventListener('click', () => {

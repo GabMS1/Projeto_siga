@@ -128,6 +128,49 @@ class AusenciaServico {
     }
 
     /**
+     * Transforma uma falta programada em uma reposição.
+     * @param int $id_progra O ID do registro de falta em programada.
+     * @param string $siape_substituto O SIAPE do professor que irá substituir.
+     * @param string $assinatura_substituto A assinatura/nome do professor.
+     * @return bool True se a atualização for bem-sucedida, false caso contrário.
+     */
+    public function pegarFalta($id_progra, $siape_substituto, $assinatura_substituto) {
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        $conn->begin_transaction();
+
+        try {
+            // 1. Cadastra o professor substituto na tabela 'prof_subs'
+            $profSubsDAO = new ProfSubsDAO();
+            $id_substituto = $profSubsDAO->cadastrar($assinatura_substituto, $siape_substituto);
+            
+            if (!$id_substituto) {
+                throw new Exception("Erro ao cadastrar professor substituto.");
+            }
+
+            // 2. Atualiza a falta programada para incluir o ID do substituto
+            $programadaDAO = new ProgramadaDAO();
+            $sucesso = $programadaDAO->atualizarFaltaParaReposicao($id_progra, $id_substituto);
+
+            if (!$sucesso) {
+                throw new Exception("Erro ao atualizar a falta para reposição.");
+            }
+
+            // Se tudo deu certo, confirma a transação.
+            $conn->commit();
+            return true;
+
+        } catch (Exception $e) {
+            // Em caso de qualquer erro, desfaz a transação.
+            $conn->rollback();
+            error_log("AusenciaServico: Falha na transação de 'pegar falta' - " . $e->getMessage());
+            return false;
+        } finally {
+            $conexao->close();
+        }
+    }
+
+    /**
      * Lista todas as reposições agendadas para um professor específico,
      * tanto como ausente quanto como substituto.
      *
