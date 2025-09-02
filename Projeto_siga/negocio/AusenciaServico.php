@@ -103,5 +103,14 @@ class AusenciaServico {
         $programadaDAO = new ProgramadaDAO();
         return $programadaDAO->buscarTodasAusenciasPendentes();
     }
+    
+    /**
+     * Lista todas as reposições agendadas no sistema.
+     * @return array Um array de reposições.
+     */
+    public function listarTodasReposicoes() {
+        $programadaDAO = new ProgramadaDAO();
+        return $programadaDAO->listarTodasReposicoes();
+    }
 }
 ?>

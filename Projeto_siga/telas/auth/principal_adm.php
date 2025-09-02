@@ -112,7 +112,9 @@ if ($conn) {
         <li><a href="principal_adm.php">📊 Dashboard</a></li>
         <li><a href="professores.php">🧑‍🏫 Gerenciar Professores</a></li>
         <li><a href="administradores.php">⚙️ Gerenciar Admins</a></li>
-        <!-- Adicione outros links de administração aqui, se necessário -->
+        <li><a href="gerenciar_ausencias.php" class="active">🔁 Gerenciar Ausências</a></li>
+        <li><a href="disciplinas.php">📚 Gerenciar Disciplinas</a></li>
+        <li><a href="calendario.php">🗓️ Calendário de Reposições</a></li>
         <li><a href="logout.php">🚪 Sair</a></li>
     </ul>
 </div>
@@ -137,10 +139,8 @@ if ($conn) {
                 <a href="cadastro_adm.php" class="btn-add">+ Cadastrar Admin</a>
             </div>
         </div>
-        <!-- Adicione mais cards para outras informações de dashboard aqui, se necessário -->
-    </div>
+        </div>
 
-    <!-- Você pode adicionar seções para "Últimos Registros", "Atividades Recentes", etc. aqui -->
     <div class="section">
         <h2>Atividades Recentes do Sistema</h2>
         <div class='list-item'>🔄 Nenhuma atividade recente para exibir.</div>

@@ -140,6 +140,47 @@ class ProgramadaDAO {
     }
 
     /**
+     * Busca todas as reposições agendadas, independente do professor ou status de aprovação.
+     * @return array Retorna um array de arrays associativos com os dados das reposições.
+     */
+    public function listarTodasReposicoes() {
+        $reposicoes = [];
+        $sql = "
+            SELECT 
+                p.dia, 
+                p.horario, 
+                t.curso,
+                t.serie,
+                d.nome_disciplina,
+                pa.siape_prof AS siape_ausente,
+                ps.siape_prof AS siape_substituto
+            FROM programada p
+            JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
+            JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
+            JOIN turma t ON p.id_turma = t.id_turma
+            JOIN disciplina d ON p.id_disciplina = d.id_disciplina
+            ORDER BY p.dia ASC, p.horario ASC
+        ";
+
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!$stmt) {
+            error_log("ProgramadaDAO->listarTodasReposicoes: Erro ao preparar query - " . $this->conn->error);
+            return $reposicoes;
+        }
+        
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        
+        while ($linha = $resultado->fetch_assoc()) {
+            $reposicoes[] = $linha;
+        }
+        
+        $stmt->close();
+        return $reposicoes;
+    }
+
+    /**
      * Fecha a conexão com o banco de dados.
      */
     public function __destruct() {
