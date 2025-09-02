@@ -27,7 +27,7 @@ class ProgramadaDAO {
      * @param string $autor_gov O nome ou identificação da autoridade governamental (opcional).
      * @param int $id_turma O ID da turma.
      * @param int $id_disciplina O ID da disciplina.
-     * @param int $id_ass_subs O ID do registro de professor substituto.
+     * @param int|null $id_ass_subs O ID do registro de professor substituto, ou null se não houver.
      * @param int $id_ass_ausente O ID do registro de professor ausente.
      * @return bool Retorna TRUE se o cadastro for bem-sucedido, ou FALSE em caso de falha.
      */
@@ -40,8 +40,12 @@ class ProgramadaDAO {
             return false;
         }
 
-        // 'sssiiii' indica: string, string, string, int, int, int, int
-        $stmt->bind_param("sssiiii", $dia, $horario, $autor_gov, $id_turma, $id_disciplina, $id_ass_subs, $id_ass_ausente);
+        if ($id_ass_subs === null) {
+            $stmt->bind_param("sssiisi", $dia, $horario, $autor_gov, $id_turma, $id_disciplina, $id_ass_subs, $id_ass_ausente);
+        } else {
+            $stmt->bind_param("sssiiii", $dia, $horario, $autor_gov, $id_turma, $id_disciplina, $id_ass_subs, $id_ass_ausente);
+        }
+        
         $result = $stmt->execute();
         
         $stmt->close();
@@ -67,7 +71,7 @@ class ProgramadaDAO {
                 ps.siape_prof AS siape_substituto
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
-            JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
+            LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
             JOIN turma t ON p.id_turma = t.id_turma
             JOIN disciplina d ON p.id_disciplina = d.id_disciplina
             WHERE pa.siape_prof = ? OR ps.siape_prof = ?
@@ -113,7 +117,7 @@ class ProgramadaDAO {
                 ps.siape_prof AS siape_substituto
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
-            JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
+            LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
             JOIN turma t ON p.id_turma = t.id_turma
             JOIN disciplina d ON p.id_disciplina = d.id_disciplina
             LEFT JOIN relatorio r ON p.id_progra = r.id_progra
@@ -156,7 +160,7 @@ class ProgramadaDAO {
                 ps.siape_prof AS siape_substituto
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
-            JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
+            LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
             JOIN turma t ON p.id_turma = t.id_turma
             JOIN disciplina d ON p.id_disciplina = d.id_disciplina
             ORDER BY p.dia ASC, p.horario ASC

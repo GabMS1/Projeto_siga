@@ -81,6 +81,51 @@ class AusenciaServico {
             $conexao->close();
         }
     }
+    
+    /**
+     * Registra uma falta programada sem um substituto.
+     * @param array $dados Um array associativo com os dados da falta.
+     * @return bool True se o registro for bem-sucedido, false caso contrário.
+     */
+    public function programarFalta($dados) {
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        $conn->begin_transaction();
+
+        try {
+            $profAusenteDAO = new ProfAusenteDAO();
+            $id_ausente = $profAusenteDAO->cadastrar($dados['assinatura_ausente'], $dados['siape_ausente']);
+
+            if (!$id_ausente) {
+                throw new Exception("Erro ao cadastrar professor ausente.");
+            }
+
+            $programadaDAO = new ProgramadaDAO();
+            // id_ass_subs é setado como NULL para indicar uma falta sem reposição
+            $sucesso = $programadaDAO->cadastrar(
+                $dados['dia'],
+                $dados['horario'],
+                'N/A',
+                $dados['id_turma'],
+                $dados['id_disciplina'],
+                null,
+                $id_ausente
+            );
+
+            if (!$sucesso) {
+                throw new Exception("Erro ao programar a falta.");
+            }
+
+            $conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $conn->rollback();
+            error_log("AusenciaServico: Falha na transação de programação de falta - " . $e->getMessage());
+            return false;
+        } finally {
+            $conexao->close();
+        }
+    }
 
     /**
      * Lista todas as reposições agendadas para um professor específico,

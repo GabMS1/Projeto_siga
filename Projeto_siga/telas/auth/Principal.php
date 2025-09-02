@@ -181,6 +181,7 @@ if ($conn) {
         
         <li><a href="minhas_reposicoes.php">🔁 Minhas Reposições</a></li>
         <li><a href="agendar_reposicao.php">🗓️ Agendar Reposição</a></li>
+        <li><a href="programar_falta.php">🗓️ Programar Falta</a></li>
         <li><a href="calendario.php">🗓️ Calendário de Reposições</a></li>
 
         <li><a href="relatorios.php">📄 Relatórios</a></li>

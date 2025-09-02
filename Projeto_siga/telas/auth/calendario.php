@@ -90,14 +90,20 @@ if (!isset($_SESSION['usuario_logado'])) {
             margin-bottom: 5px;
         }
         .event {
-            background-color: #2a9d8f;
-            color: white;
             padding: 5px;
             border-radius: 3px;
             font-size: 0.8em;
             margin-top: 5px;
             cursor: pointer;
             word-wrap: break-word;
+        }
+        .event-reposicao {
+            background-color: #2a9d8f;
+            color: white;
+        }
+        .event-falta {
+            background-color: #dc3545;
+            color: white;
         }
         .back-link {
             display: inline-block;
@@ -175,7 +181,7 @@ if (!isset($_SESSION['usuario_logado'])) {
     </div>
     
     <div id="no-events-message" class="empty-message" style="display: none;">
-        Não há reposições agendadas para o mês atual.
+        Não há eventos agendados para o mês atual.
     </div>
 
     <a href="principal.php" class="back-link">← Voltar ao Dashboard</a>
@@ -184,7 +190,8 @@ if (!isset($_SESSION['usuario_logado'])) {
 <div id="reposition-modal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <h2>Detalhes da Reposição</h2>
+        <h2>Detalhes do Evento</h2>
+        <p><strong>Tipo:</strong> <span id="modal-type"></span></p>
         <p><strong>Data:</strong> <span id="modal-date"></span></p>
         <p><strong>Horário:</strong> <span id="modal-time"></span></p>
         <p><strong>Professor Ausente:</strong> <span id="modal-absent-prof"></span></p>
@@ -206,13 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
-    let reposicoesData = [];
+    let eventosData = [];
 
-    const fetchReposicoes = () => {
-        // Constrói o caminho da API de forma dinâmica e confiável
-        const path = document.location.pathname.replace('telas/auth/calendario.php', 'api/reposicoes.php');
-        
-        fetch(path)
+    const fetchEventos = () => {
+        fetch('../api/reposicoes.php')
             .then(response => {
                 console.log('Resposta da API recebida:', response);
                 if (!response.ok) {
@@ -223,15 +227,15 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 console.log('Dados da API (JSON):', data);
                 if (data.success) {
-                    reposicoesData = data.data;
+                    eventosData = data.data;
                     renderCalendar();
                 } else {
-                    console.error('Erro ao carregar os dados de reposição:', data.message);
+                    console.error('Erro ao carregar os dados de eventos:', data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro na requisição da API:', error);
-                noEventsMessageEl.textContent = "Ocorreu um erro ao carregar as reposições. Verifique o console.";
+                noEventsMessageEl.textContent = "Ocorreu um erro ao carregar os eventos. Verifique o console.";
                 noEventsMessageEl.style.display = 'block';
             });
     };
@@ -273,14 +277,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formattedDate = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
 
-            const reposicoesDoDia = reposicoesData.filter(repo => repo.dia === formattedDate);
-            if (reposicoesDoDia.length > 0) {
+            const eventosDoDia = eventosData.filter(evento => evento.dia === formattedDate);
+            if (eventosDoDia.length > 0) {
                 hasEventsInMonth = true;
-                reposicoesDoDia.forEach(repo => {
+                eventosDoDia.forEach(evento => {
                     const eventEl = document.createElement('div');
                     eventEl.classList.add('event');
-                    eventEl.textContent = `Reposição às ${repo.horario.substring(0, 5)}`;
-                    eventEl.addEventListener('click', () => showModal(repo));
+
+                    if (evento.tipo_evento === 'falta') {
+                        eventEl.classList.add('event-falta');
+                        eventEl.textContent = `Falta: ${evento.horario.substring(0, 5)}`;
+                    } else {
+                        eventEl.classList.add('event-reposicao');
+                        eventEl.textContent = `Reposição: ${evento.horario.substring(0, 5)}`;
+                    }
+
+                    eventEl.addEventListener('click', () => showModal(evento));
                     dayEl.appendChild(eventEl);
                 });
             }
@@ -289,17 +301,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!hasEventsInMonth) {
             noEventsMessageEl.style.display = 'block';
-            noEventsMessageEl.textContent = `Não há reposições agendadas para ${monthNames[currentMonth]} de ${currentYear}.`;
+            noEventsMessageEl.textContent = `Não há eventos agendados para ${monthNames[currentMonth]} de ${currentYear}.`;
         }
     };
 
-    const showModal = (reposicao) => {
-        document.getElementById('modal-date').textContent = reposicao.dia;
-        document.getElementById('modal-time').textContent = reposicao.horario.substring(0, 5);
-        document.getElementById('modal-absent-prof').textContent = reposicao.siape_ausente;
-        document.getElementById('modal-sub-prof').textContent = reposicao.siape_substituto;
-        document.getElementById('modal-subject').textContent = reposicao.nome_disciplina;
-        document.getElementById('modal-class').textContent = `${reposicao.curso} - ${reposicao.serie}`;
+    const showModal = (evento) => {
+        document.getElementById('modal-type').textContent = evento.tipo_evento === 'falta' ? 'Falta Programada' : 'Reposição de Aula';
+        document.getElementById('modal-date').textContent = evento.dia;
+        document.getElementById('modal-time').textContent = evento.horario.substring(0, 5);
+        document.getElementById('modal-absent-prof').textContent = evento.siape_ausente;
+        document.getElementById('modal-sub-prof').textContent = evento.siape_substituto || 'Não há';
+        document.getElementById('modal-subject').textContent = evento.nome_disciplina;
+        document.getElementById('modal-class').textContent = `${evento.curso} - ${evento.serie}`;
         modal.style.display = 'block';
     };
 
@@ -331,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    fetchReposicoes();
+    fetchEventos();
 });
 </script>
 
