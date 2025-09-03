@@ -12,13 +12,14 @@ class DisciplinaDAO {
     }
 
     public function cadastrar($nome_disciplina, $ch, $siape_prof) {
+        // Corrigido para ch ser INT, conforme o banco de dados
         $sql = "INSERT INTO disciplina (nome_disciplina, ch, siape_prof) VALUES (?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) {
             error_log("DisciplinaDAO->cadastrar: Erro ao preparar query - " . $this->conn->error);
             return false;
         }
-        $stmt->bind_param("sss", $nome_disciplina, $ch, $siape_prof);
+        $stmt->bind_param("sis", $nome_disciplina, $ch, $siape_prof);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -85,7 +86,7 @@ class DisciplinaDAO {
             error_log("DisciplinaDAO->atualizar: Erro ao preparar query - " . $this->conn->error);
             return false;
         }
-        $stmt->bind_param("ssi", $nome_disciplina, $ch, $id);
+        $stmt->bind_param("sii", $nome_disciplina, $ch, $id); // ch é INT
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -96,54 +97,36 @@ class DisciplinaDAO {
             return false;
         }
 
-        // Inicia a transação
         $this->conn->begin_transaction();
-
         try {
-            // 1. Excluir os registros dependentes na tabela 'programada'
             $sql_programada = "DELETE FROM programada WHERE id_disciplina = ?";
             $stmt_programada = $this->conn->prepare($sql_programada);
-            if (!$stmt_programada) {
-                throw new Exception("Erro ao preparar a exclusão de registros de 'programada': " . $this->conn->error);
-            }
+            if (!$stmt_programada) throw new Exception("Erro: " . $this->conn->error);
             $stmt_programada->bind_param("i", $id);
-            if (!$stmt_programada->execute()) {
-                throw new Exception("Erro ao excluir registros de 'programada': " . $stmt_programada->error);
-            }
+            $stmt_programada->execute();
             $stmt_programada->close();
 
-            // 2. Excluir os registros dependentes na tabela 'turma'
             $sql_turma = "DELETE FROM turma WHERE id_disciplina = ?";
             $stmt_turma = $this->conn->prepare($sql_turma);
-            if (!$stmt_turma) {
-                throw new Exception("Erro ao preparar a exclusão de registros de 'turma': " . $this->conn->error);
-            }
+            if (!$stmt_turma) throw new Exception("Erro: " . $this->conn->error);
             $stmt_turma->bind_param("i", $id);
-            if (!$stmt_turma->execute()) {
-                throw new Exception("Erro ao excluir registros de 'turma': " . $stmt_turma->error);
-            }
+            $stmt_turma->execute();
             $stmt_turma->close();
 
-            // 3. Excluir a disciplina da tabela 'disciplina'
             $sql_disciplina = "DELETE FROM disciplina WHERE id_disciplina = ?";
             $stmt_disciplina = $this->conn->prepare($sql_disciplina);
-            if (!$stmt_disciplina) {
-                throw new Exception("Erro ao preparar a exclusão da disciplina: " . $this->conn->error);
-            }
+            if (!$stmt_disciplina) throw new Exception("Erro: " . $this->conn->error);
             $stmt_disciplina->bind_param("i", $id);
-            if (!$stmt_disciplina->execute()) {
-                throw new Exception("Erro ao excluir a disciplina: " . $stmt_disciplina->error);
-            }
+            $stmt_disciplina->execute();
             $stmt_disciplina->close();
 
-            // Se tudo der certo, confirma a transação
             $this->conn->commit();
             return true;
         } catch (Exception $e) {
-            // Se houver qualquer erro, desfaz todas as operações
             $this->conn->rollback();
             error_log("DisciplinaDAO->excluir: Falha na transação - " . $e->getMessage());
             return false;
         }
     }
 }
+?>

@@ -11,6 +11,10 @@ require_once __DIR__ . '/DisciplinaServico.php';
  * como validação de dados, unicidade do ID e orquestração do cadastro e listagem.
  */
 class TurmaServico {
+    public function listarTodasAsTurmas() {
+        $turmaDAO = new TurmaDAO();
+        return $turmaDAO->buscarTodas();
+    }
     // Propriedades para armazenar os dados da turma no nível de serviço.
     public $id_turma;
     public $curso;

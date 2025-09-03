@@ -40,7 +40,7 @@ class AdministradorDAO {
         }
 
         // Prepara a consulta SQL para inserir um novo registro na tabela 'admin'.
-        // id_adm é AUTO_INCREMENT, então não o incluímos na inserção.
+        // id_adm é AUTO_INCREMENT, então не o incluímos na inserção.
         // Incluímos 'siape_login' que você adicionou.
         $SQL = "INSERT INTO admin (siape_login, nome, senha_adm, cargo) VALUES (?, ?, ?, ?)";
         $stmt = $conn->prepare($SQL); // Prepara a query para prevenir SQL Injection.
@@ -107,6 +107,35 @@ class AdministradorDAO {
         $stmt->close();
         $conexao->close();
         return $row ?? false; // Retorna a linha encontrada (ou null se não houver), ou false se for null.
+    }
+
+    /**
+     * Lista todos os administradores cadastrados no banco de dados.
+     * @return array Retorna um array de administradores.
+     */
+    public function listarTodos() {
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        if (!$conn) { return []; }
+
+        $administradores = [];
+        $sql = "SELECT id_adm, siape_login, nome, cargo FROM admin ORDER BY nome ASC";
+        $stmt = $conn->prepare($sql);
+
+        if (!$stmt) {
+            error_log("AdministradorDAO - Erro ao preparar a listagem de administradores: " . $conn->error);
+            $conexao->close();
+            return [];
+        }
+
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        while ($linha = $resultado->fetch_assoc()) {
+            $administradores[] = $linha;
+        }
+        $stmt->close();
+        $conexao->close();
+        return $administradores;
     }
 }
 ?>

@@ -9,6 +9,26 @@ require_once __DIR__ . '/Conexao.php';
  * relacionadas às turmas (tabela 'turma').
  */
 class TurmaDAO {
+
+    public function buscarTodas() {
+        $turmas = [];
+        $sql = "SELECT t.id_turma, t.curso, t.serie, d.nome_disciplina, p.nome as nome_professor
+                FROM turma t
+                JOIN disciplina d ON t.id_disciplina = d.id_disciplina
+                LEFT JOIN professor p ON d.siape_prof = p.siape_prof
+                ORDER BY t.id_turma ASC";
+        
+        $stmt = $this->conn->prepare($sql);
+        if (!$stmt) return [];
+
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        while ($linha = $resultado->fetch_assoc()) {
+            $turmas[] = $linha;
+        }
+        $stmt->close();
+        return $turmas;
+    }
     // Propriedades para armazenar os dados da turma.
     public $id_turma;
     public $curso;

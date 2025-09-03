@@ -112,7 +112,7 @@ try {
             color: white;
             text-decoration: none;
             border-radius: 4px;
-            transition: background-color 0.3s ease;
+            transition: background-color: 0.3s ease;
         }
         .back-link:hover {
             background-color: #268074;
@@ -157,7 +157,7 @@ try {
                 <?php foreach ($administradores as $admin): ?>
                 <tr>
                     <td><?php echo htmlspecialchars($admin['id_adm']); ?></td>
-                    <td><?php echo htmlspecialchars($admin['siape_adm']); ?></td>
+                    <td><?php echo htmlspecialchars($admin['siape_login']); ?></td>
                     <td><?php echo htmlspecialchars($admin['nome']); ?></td>
                     <td><?php echo htmlspecialchars($admin['cargo']); ?></td>
                 </tr>

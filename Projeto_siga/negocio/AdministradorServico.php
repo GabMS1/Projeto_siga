@@ -73,5 +73,14 @@ class AdministradorServico {
         // Se o administrador não for encontrado ou a senha não corresponder, retorna FALSE.
         return false;
     }
+
+    /**
+     * Lista todos os administradores.
+     * @return array Um array com todos os administradores.
+     */
+    public function listarAdministradores() {
+        $administradorDAO = new AdministradorDAO();
+        return $administradorDAO->listarTodos();
+    }
 }
 ?>

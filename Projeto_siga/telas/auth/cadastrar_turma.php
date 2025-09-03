@@ -138,7 +138,7 @@ try {
             cursor: pointer;
             font-size: 1em;
             width: 100%;
-            transition: background-color 0.3s ease;
+            transition: background-color: 0.3s ease;
             margin-top: 20px;
         }
         .submit-button:hover {

@@ -88,3 +88,10 @@ CREATE INDEX idx_relatorio_professor ON `relatorio`(`siape_prof`);
 CREATE INDEX idx_prof_ausente_siape ON `prof_ausente`(`siape_prof`);
 CREATE INDEX idx_programada_turma ON `programada`(`id_turma`);
 CREATE INDEX idx_programada_disciplina ON `programada`(`id_disciplina`);
+
+ALTER TABLE `disciplina` ADD `aulas_semanais` INT NOT NULL AFTER `ch`;
+
+ALTER TABLE `turma`
+CHANGE `curso` `curso` ENUM('Agropecuária', 'Alimentos', 'Informática') NOT NULL,
+CHANGE `serie` `serie` ENUM('1', '2', '3') NOT NULL;
+ALTER TABLE `disciplina` CHANGE `siape_prof` `siape_prof` VARCHAR(20) NULL DEFAULT NULL;

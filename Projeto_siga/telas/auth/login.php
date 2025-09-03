@@ -11,7 +11,6 @@ if (session_status() === PHP_SESSION_NONE) {
 };
 
 // Inclui as classes de serviço para Professores e Administradores.
-// Isso permite que a lógica de autenticação de ambos os tipos de usuário seja acessível.
 require_once __DIR__ . '/../../negocio/ProfessorServico.php';
 require_once __DIR__ . '/../../negocio/AdministradorServico.php';
 
@@ -20,45 +19,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $siape = $_POST['siape'] ?? ''; // Obtém o SIAPE digitado no formulário.
     $senha = $_POST['senha'] ?? ''; // Obtém a senha digitada no formulário.
 
-    // Validação básica: verifica se SIAPE e senha foram preenchidos.
     if (empty($siape) || empty($senha)) {
-        $_SESSION['login_error'] = "SIAPE e senha são obrigatórios."; // Mensagem de erro.
-        header("Location: login.php"); // Redireciona de volta para a página de login.
-        exit; // Encerra o script.
+        $_SESSION['login_error'] = "SIAPE e senha são obrigatórios.";
+        header("Location: login.php");
+        exit;
     }
 
-    // --- Tenta autenticar como ADMINISTRADOR primeiro ---
-    $adminServico = new AdministradorServico(); // Cria uma instância do serviço de Administrador.
-    $adminAuth = $adminServico->autenticar($siape, $senha); // Tenta autenticar o usuário como admin.
+    // Tenta autenticar como ADMINISTRADOR primeiro
+    $adminServico = new AdministradorServico();
+    $adminAuth = $adminServico->autenticar($siape, $senha);
     
     if ($adminAuth) {
-        // Se a autenticação como administrador for bem-sucedida:
-        $_SESSION['usuario_logado'] = $siape;                   // Armazena o SIAPE na sessão.
-        $_SESSION['nome_usuario_logado'] = $adminAuth['nome'];  // Armazena o nome do admin na sessão.
-        $_SESSION['tipo_usuario'] = 'admin';                    // Define o tipo de usuário na sessão. CRUCIAL para controle de acesso.
-        $_SESSION['login_success'] = "Login como administrador realizado com sucesso!"; // Mensagem de sucesso.
-        header("Location: principal_adm.php"); // Redireciona para o painel do administrador.
-        exit; // Encerra o script.
+        $_SESSION['usuario_logado'] = $siape;
+        $_SESSION['nome_usuario_logado'] = $adminAuth['nome'];
+        $_SESSION['tipo_usuario'] = 'admin';
+        $_SESSION['cargo_usuario_logado'] = $adminAuth['cargo']; // Armazena o cargo
+        $_SESSION['login_success'] = "Login como administrador realizado com sucesso!";
+        header("Location: principal_adm.php");
+        exit;
     }
 
-    // --- Se não for admin, tenta autenticar como PROFESSOR ---
-    $professorServico = new ProfessorServico(); // Cria uma instância do serviço de Professor.
-    $profAuth = $professorServico->autenticar($siape, $senha); // Tenta autenticar o usuário como professor.
+    // Se não for admin, tenta autenticar como PROFESSOR
+    $professorServico = new ProfessorServico();
+    $profAuth = $professorServico->autenticar($siape, $senha);
 
     if ($profAuth) {
-        // Se a autenticação como professor for bem-sucedida:
-        $_SESSION['usuario_logado'] = $siape;                   // Armazena o SIAPE na sessão.
-        $_SESSION['nome_usuario_logado'] = $profAuth['nome'];   // Armazena o nome do professor na sessão.
-        $_SESSION['tipo_usuario'] = 'professor';                // Define o tipo de usuário na sessão. CRUCIAL para controle de acesso.
-        $_SESSION['login_success'] = "Login realizado com sucesso!"; // Mensagem de sucesso.
-        header("Location: principal.php"); // Redireciona para o painel do professor.
-        exit; // Encerra o script.
+        $_SESSION['usuario_logado'] = $siape;
+        $_SESSION['nome_usuario_logado'] = $profAuth['nome'];
+        $_SESSION['tipo_usuario'] = 'professor';
+        $_SESSION['login_success'] = "Login realizado com sucesso!";
+        header("Location: principal.php");
+        exit;
     }
 
-    // --- Se nenhuma autenticação for bem-sucedida ---
-    $_SESSION['login_error'] = "SIAPE ou senha incorretos."; // Mensagem de erro genérica.
-    header("Location: login.php"); // Redireciona de volta para a página de login.
-    exit; // Encerra o script.
+    // Se nenhuma autenticação for bem-sucedida
+    $_SESSION['login_error'] = "SIAPE ou senha incorretos.";
+    header("Location: login.php");
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -68,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SUAP IF Goiano</title>
     <style>
-        /* Estilos CSS (mantidos conforme seu arquivo original) */
         body {
             font-family: sans-serif;
             margin: 0;
@@ -100,13 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             flex: 1;
         }
 
-        .logo {
-            margin-bottom: 20px;
-        }
-
         .logo img {
             max-width: 150px;
             height: auto;
+            margin-bottom: 20px;
         }
 
         .left-side h1 {
@@ -154,21 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-size: 16px;
             box-sizing: border-box;
         }
-
-        .password-container {
-            position: relative;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            user-select: none;
-            content: "👁️";
-        }
-
+        
         .login-button {
             background-color: #2a9d8f;
             color: #fff;
@@ -185,62 +164,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: #268074;
         }
 
-        .forgot-password {
+        /* --- NOVO ESTILO PARA O LINK DE CADASTRO --- */
+        .signup-link {
             margin-top: 20px;
             text-align: center;
-        }
-
-        .forgot-password a {
-            color: #555;
-            text-decoration: none;
             font-size: 0.9em;
         }
 
-        .forgot-password a:hover {
+        .signup-link a {
+            color: #2a9d8f;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .signup-link a:hover {
             text-decoration: underline;
         }
+        /* --- FIM DO NOVO ESTILO --- */
 
-        .social-login {
-            margin-top: 25px;
-            text-align: center;
-        }
-
-        .social-login button {
-            background-color: #fff;
-            color: #555;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 10px 15px;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .social-login button img {
-            max-height: 24px;
-            margin-right: 10px;
-        }
-
-        hr {
-            border: 0;
-            border-top: 1px solid #ccc;
-            margin: 20px 0;
-        }
-
-        .error-message {
-            color: red;
+        .error-message, .success-message {
             text-align: center;
             margin-bottom: 15px;
             font-weight: bold;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .error-message {
+            color: #721c24;
+            background-color: #f8d7da;
         }
         .success-message {
-            color: green;
-            text-align: center;
-            margin-bottom: 15px;
-            font-weight: bold;
+            color: #155724;
+            background-color: #d4edda;
         }
     </style>
 </head>
@@ -255,60 +210,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
         <div class="right-side">
             <h2 class="login-title">Login</h2>
-            <p style="text-align: center; color: #555; margin-bottom: 20px;">Acesse ao SUAP IFGOIANO:</p>
+            <p style="text-align: center; color: #555; margin-bottom: 20px;">Acesse o SIGA:</p>
 
             <?php
-            // Exibe mensagem de sucesso de cadastro (se houver vindo do cadastro.php ou cadastro_adm.php).
             if (isset($_SESSION['cadastro_success'])) {
-                echo '<p class="success-message">' . $_SESSION['cadastro_success'] . '</p>';
-                unset($_SESSION['cadastro_success']); // Limpa a mensagem após exibir.
+                echo '<p class="success-message">' . htmlspecialchars($_SESSION['cadastro_success']) . '</p>';
+                unset($_SESSION['cadastro_success']);
             }
-            // Exibe mensagem de erro de login (se houver).
             if (isset($_SESSION['login_error'])) {
-                echo '<p class="error-message">' . $_SESSION['login_error'] . '</p>';
-                unset($_SESSION['login_error']); // Limpa a mensagem após exibir.
+                echo '<p class="error-message">' . htmlspecialchars($_SESSION['login_error']) . '</p>';
+                unset($_SESSION['login_error']);
             }
             ?>
 
-            <form action="" method="POST">
+            <form action="login.php" method="POST">
                 <div class="form-group">
                     <label for="siape">SIAPE:</label>
-                    <input type="text" id="siape_prof" name="siape" required>
+                    <input type="text" id="siape" name="siape" required>
                 </div>
-                <div class="form-group password-container">
+                <div class="form-group">
                     <label for="senha">Senha:</label>
                     <input type="password" id="senha" name="senha" required>
-                    <span class="password-toggle" onclick="togglePasswordVisibility()">👁️</span>
                 </div>
                 <button type="submit" class="login-button">Acessar</button>
             </form>
 
-            <div class="forgot-password">
-                <a href="#">Esqueceu ou deseja alterar sua senha?</a>
+            <div class="signup-link">
+                Não tem uma conta? <a href="cadastro.php">Cadastre-se</a>
             </div>
-            <hr>
-            <div class="social-login">
-                <button>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google Logo">
-                    Entrar com g<span style="color: #4285F4;">o</span><span style="color: #EA4335;">o</span><span style="color: #FBBC05;">g</span><span style="color: #4285F4;">l</span><span style="color: #34A853;">e</span>
-                </button>
             </div>
-        </div>
     </div>
-
-    <script>
-        // Função JavaScript para alternar a visibilidade da senha.
-        function togglePasswordVisibility() {
-            const passwordInput = document.getElementById("senha");
-            const toggleIcon = document.querySelector(".password-toggle");
-            if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                toggleIcon.textContent = "👁️‍🗨️"; // Altera o ícone para "olho aberto com risco"
-            } else {
-                passwordInput.type = "password";
-                toggleIcon.textContent = "👁️"; // Altera o ícone para "olho fechado"
-            }
-        }
-    </script>
 </body>
 </html>

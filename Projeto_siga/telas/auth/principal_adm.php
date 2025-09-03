@@ -1,37 +1,25 @@
 <?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\principal_adm.php
 
-// ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
-// Inicia a sessão PHP se ainda não estiver iniciada.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Inclui a classe de Conexão para acessar o banco de dados.
 require_once __DIR__ . '/../../DAO/Conexao.php';
-// Inclui o ProfessorServico para contar e listar professores.
-require_once __DIR__ . '/../../negocio/ProfessorServico.php';
-// Inclui o AdministradorServico para contar e listar administradores (opcional, mas bom ter).
-require_once __DIR__ . '/../../negocio/AdministradorServico.php';
 
-// --- PROTEÇÃO DE ROTA ---
-// Verifica se o usuário está logado E se o tipo de usuário é 'admin'.
-// Se não estiver logado ou não for um administrador, redireciona para a página de login com uma mensagem de erro.
 if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin') {
     $_SESSION['login_error'] = "Acesso negado. Faça login como administrador.";
-    header("Location: login.php"); // Redireciona para login.php.
-    exit(); // Encerra o script para evitar que a página seja carregada sem autenticação.
+    header("Location: login.php");
+    exit();
 }
 
-// Pega o SIAPE e o nome do administrador da sessão.
-$siape_adm = $_SESSION['usuario_logado'];
 $nome_adm = $_SESSION['nome_usuario_logado'];
-$cargo_adm = $_SESSION['cargo_usuario_logado'] ?? 'Administrador'; // Pega o cargo, se disponível.
+$cargo_adm = $_SESSION['cargo_usuario_logado'] ?? 'Administrador';
 
-// Inicializa contadores.
 $totalProfessores = 0;
 $totalAdministradores = 0;
-// Você pode adicionar mais contadores aqui (ex: total de disciplinas, turmas, relatórios pendentes, etc.)
+$totalDisciplinas = 0;
+$reposicoesPendentes = 0;
 
 $conexao = new Conexao();
 $conn = $conexao->get_connection();
@@ -39,31 +27,19 @@ $conn = $conexao->get_connection();
 if ($conn) {
     // Contar total de professores.
     $stmtProf = $conn->prepare("SELECT COUNT(*) AS total FROM professor");
-    if ($stmtProf) {
-        $stmtProf->execute();
-        $resProf = $stmtProf->get_result();
-        if ($row = $resProf->fetch_assoc()) {
-            $totalProfessores = $row['total'];
-        }
-        $stmtProf->close();
-    } else {
-        error_log("Erro ao preparar query de contagem de professores: " . $conn->error);
-    }
+    if($stmtProf) { $stmtProf->execute(); $resProf = $stmtProf->get_result(); if($row = $resProf->fetch_assoc()) { $totalProfessores = $row['total']; } $stmtProf->close(); }
 
     // Contar total de administradores.
     $stmtAdm = $conn->prepare("SELECT COUNT(*) AS total FROM admin");
-    if ($stmtAdm) {
-        $stmtAdm->execute();
-        $resAdm = $stmtAdm->get_result();
-        if ($row = $resAdm->fetch_assoc()) {
-            $totalAdministradores = $row['total'];
-        }
-        $stmtAdm->close();
-    } else {
-        error_log("Erro ao preparar query de contagem de administradores: " . $conn->error);
-    }
+    if($stmtAdm) { $stmtAdm->execute(); $resAdm = $stmtAdm->get_result(); if($row = $resAdm->fetch_assoc()) { $totalAdministradores = $row['total']; } $stmtAdm->close(); }
 
-    // Adicione outras consultas de contagem aqui, se desejar.
+    // Contar total de disciplinas.
+    $stmtDisc = $conn->prepare("SELECT COUNT(*) AS total FROM disciplina");
+    if($stmtDisc) { $stmtDisc->execute(); $resDisc = $stmtDisc->get_result(); if($row = $resDisc->fetch_assoc()) { $totalDisciplinas = $row['total']; } $stmtDisc->close(); }
+    
+    // Contar reposições pendentes (sem relatório associado).
+    $stmtPend = $conn->prepare("SELECT COUNT(*) AS total FROM programada p LEFT JOIN relatorio r ON p.id_progra = r.id_progra WHERE r.id_progra IS NULL");
+    if($stmtPend) { $stmtPend->execute(); $resPend = $stmtPend->get_result(); if($row = $resPend->fetch_assoc()) { $reposicoesPendentes = $row['total']; } $stmtPend->close(); }
 
     $conexao->close();
 } else {
@@ -75,78 +51,203 @@ if ($conn) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Administrador</title>
+    <title>Painel do Administrador - SIGA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; background-color: #f4f7f8; }
-        .sidebar { width: 220px; height: 100vh; background-color: #386641; color: white; padding-top: 30px; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-        .sidebar h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: white; }
-        .sidebar ul { list-style: none; padding: 0; margin: 0; }
-        .sidebar li { padding: 8px 20px; margin-bottom: 5px; }
-        .sidebar a { color: white; text-decoration: none; font-weight: bold; display: block; padding: 8px 12px; border-radius: 4px; transition: background-color 0.3s; }
-        .sidebar a:hover { background-color: #4d774e; }
-        .sidebar a:active { background-color: #2a5133; }
+        :root {
+            --primary-color: #386641;
+            --secondary-color: #2a9d8f;
+            --accent-color: #f4a261;
+            --text-color: #264653;
+            --bg-light: #f8f9fa;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            --border-color: #dee2e6;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            background-color: var(--bg-light);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100%;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sidebar h2 {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: white;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        .sidebar li {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            transition: all 0.3s ease;
+        }
+        .sidebar a i {
+            margin-right: 15px;
+            font-size: 1.1em;
+            width: 20px;
+            text-align: center;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid var(--accent-color);
+            padding-left: 21px;
+        }
         
-        .main { margin-left: 220px; padding: 30px; flex: 1; width: calc(100% - 220px); }
-        .main h1 { color: #2a9d8f; margin-bottom: 30px; }
-        .cards { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
-        .card { background-color: white; padding: 20px; border-radius: 8px; flex: 1; min-width: 180px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); text-align: center; }
-        .card h3 { margin: 0; color: #555; font-size: 16px; margin-bottom: 10px; }
-        .card p { font-size: 28px; font-weight: bold; color: #386641; margin-top: 0; }
-        .card-buttons { display: flex; gap: 10px; margin-top: 15px; justify-content: center; flex-wrap: wrap; }
-        .btn-view, .btn-add { padding: 8px 15px; border-radius: 4px; font-size: 14px; text-decoration: none; text-align: center; flex: 1; min-width: 100px; }
-        .btn-view { background-color: #2a9d8f; color: white; }
-        .btn-add { background-color: #386641; color: white; }
-        .btn-view:hover { background-color: #268074; }
-        .btn-add:hover { background-color: #4d774e; }
-        .section { margin-top: 40px; background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-        .section h2 { margin-bottom: 20px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .list-item { background-color: #f9f9f9; padding: 10px 15px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #2a9d8f; color: #333; }
-        .list-item:last-child { margin-bottom: 0; }
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            flex: 1;
+            width: calc(100% - 250px);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--text-color);
+            font-size: 1.8em;
+            font-weight: 600;
+            margin: 0;
+        }
+        .header p {
+            margin: 0;
+            color: #888;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+        .card i {
+            font-size: 2.5em;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        .card h3 {
+            margin: 0;
+            color: #888;
+            font-size: 0.9em;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .card p {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 5px 0 15px 0;
+        }
+        .btn-view { 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            text-decoration: none; 
+            font-weight: 500;
+            cursor: pointer; 
+            border: none; 
+            background-color: var(--secondary-color); 
+            color: white; 
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .btn-view:hover { 
+            background-color: #218e81; 
+        }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h2>Administrador</h2>
+    <h2>Admin SIGA</h2>
     <ul>
-        <li><a href="principal_adm.php">📊 Dashboard</a></li>
-        <li><a href="professores.php">🧑‍🏫 Gerenciar Professores</a></li>
-        <li><a href="administradores.php">⚙️ Gerenciar Admins</a></li>
-        <li><a href="gerenciar_ausencias.php" class="active">🔁 Gerenciar Ausências</a></li>
-        <li><a href="disciplinas.php">📚 Gerenciar Disciplinas</a></li>
-        <li><a href="calendario.php">🗓️ Calendário de Reposições</a></li>
-        <li><a href="logout.php">🚪 Sair</a></li>
+        <li><a href="principal_adm.php" class="active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li><a href="professores.php"><i class="fas fa-chalkboard-teacher"></i> <span>Professores</span></a></li>
+        <li><a href="administradores.php"><i class="fas fa-user-shield"></i> <span>Admins</span></a></li>
+        <li><a href="disciplinas.php"><i class="fas fa-book"></i> <span>Disciplinas</span></a></li>
+        <li><a href="gerenciar_turmas.php"><i class="fas fa-users"></i> <span>Turmas</span></a></li>
+        <li><a href="gerenciar_ausencias.php"><i class="fas fa-calendar-check"></i> <span>Ausências</span></a></li>
+        <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Sair</span></a></li>
     </ul>
 </div>
 
-<div class="main">
-    <h1>Bem-vindo(a), <?php echo htmlspecialchars($nome_adm); ?> (<?php echo htmlspecialchars($cargo_adm); ?>)!</h1>
+<div class="main-content">
+    <div class="header">
+        <div>
+            <h1>Painel Administrativo</h1>
+            <p>Bem-vindo(a), <?php echo htmlspecialchars($nome_adm); ?>!</p>
+        </div>
+    </div>
 
     <div class="cards">
         <div class="card">
-            <h3>Professores Cadastrados</h3>
+            <i class="fas fa-users"></i>
+            <h3>Professores</h3>
             <p><?php echo $totalProfessores; ?></p>
-            <div class="card-buttons">
-                <a href="professores.php" class="btn-view">Ver Professores</a>
-                <a href="cadastro.php" class="btn-add">+ Cadastrar Professor</a>
-            </div>
+            <a href="professores.php" class="btn-view">Gerenciar</a>
         </div>
         <div class="card">
-            <h3>Administradores Cadastrados</h3>
+            <i class="fas fa-user-tie"></i>
+            <h3>Administradores</h3>
             <p><?php echo $totalAdministradores; ?></p>
-            <div class="card-buttons">
-                <a href="administradores.php" class="btn-view">Ver Administradores</a>
-                <a href="cadastro_adm.php" class="btn-add">+ Cadastrar Admin</a>
-            </div>
+            <a href="administradores.php" class="btn-view">Gerenciar</a>
         </div>
+        <div class="card">
+            <i class="fas fa-book-reader"></i>
+            <h3>Disciplinas</h3>
+            <p><?php echo $totalDisciplinas; ?></p>
+            <a href="disciplinas.php" class="btn-view">Gerenciar</a>
         </div>
-
-    <div class="section">
-        <h2>Atividades Recentes do Sistema</h2>
-        <div class='list-item'>🔄 Nenhuma atividade recente para exibir.</div>
-        <div class='list-item'>💡 Comece a gerenciar professores e turmas!</div>
+        <div class="card">
+            <i class="fas fa-calendar-alt"></i>
+            <h3>Reposições Pendentes</h3>
+            <p><?php echo $reposicoesPendentes; ?></p>
+            <a href="gerenciar_ausencias.php" class="btn-view">Gerenciar</a>
+        </div>
     </div>
-
 </div>
 
 </body>

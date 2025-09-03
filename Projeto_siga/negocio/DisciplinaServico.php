@@ -23,7 +23,6 @@ class DisciplinaServico {
         return $disciplinaDAO->listarTodos();
     }
     
-    // NOVO MÉTODO
     public function listarDisciplinasPorProfessor($siape_prof) {
         $disciplinaDAO = new DisciplinaDAO();
         return $disciplinaDAO->listarPorProfessor($siape_prof);
@@ -44,3 +43,4 @@ class DisciplinaServico {
         return $disciplinaDAO->excluir($id);
     }
 }
+?>
