@@ -1,76 +1,68 @@
 ﻿<?php
-// C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\telas\auth\Principal.php
+// C:\xampp\htdocs\Projeto_siga\telas\auth\Principal.php
 
 // ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(); // Inicia a sessão PHP se ainda não estiver iniciada.
+    session_start();
 }
 
-// Inclui a classe de Conexão para acessar o banco de dados.
-require_once __DIR__ . '/../../DAO/Conexao.php'; 
-// Inclui o ProfessorServico para contar e listar professores.
+require_once __DIR__ . '/../../DAO/Conexao.php';
 require_once __DIR__ . '/../../negocio/ProfessorServico.php';
-// Inclui o AdministradorServico para contar e listar administradores (opcional, mas bom ter).
-require_once __DIR__ . '/../../negocio/AdministradorServico.php';
+require_once __DIR__ . '/../../negocio/DisciplinaServico.php';
+require_once __DIR__ . '/../../negocio/TurmaServico.php';
+require_once __DIR__ . '/../../negocio/AusenciaServico.php';
 
-// --- PROTEÇÃO DE ROTA ---
-// Verifica se o usuário está logado E se o tipo de usuário é 'professor'.
-// Se não estiver logado ou não for um professor, redireciona para a página de login com uma mensagem de erro.
 if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'professor') {
     $_SESSION['login_error'] = "Acesso negado. Faça login como professor.";
-    header("Location: login.php"); // Redireciona para login.php.
-    exit(); // Encerra o script para evitar que a página seja carregada sem autenticação.
+    header("Location: login.php");
+    exit();
 }
 
-// Pega o SIAPE e o nome do professor da sessão (definidos no login.php após a autenticação bem-sucedida).
 $siape = $_SESSION['usuario_logado'];
 $nome = $_SESSION['nome_usuario_logado'];
 
-// Inicializa os contadores para exibição no dashboard.
 $totalDisciplinas = 0;
-$totalRelatorios = 0;
-$totalReposPendentes = 0;
 $totalTurmas = 0;
+$totalReposPendentes = 0;
+$totalCargaHoraria = 0;
+$reposicoesAgendadas = [];
 
-// Cria uma instância da classe de conexão com o banco de dados.
 $conexao = new Conexao();
-$conn = $conexao->get_connection(); // Obtém o objeto de conexão.
+$conn = $conexao->get_connection();
 
 if ($conn) {
-    // --- CONSULTAS AO BANCO DE DADOS PARA POPULAR O DASHBOARD DO PROFESSOR ---
-    // Todas as consultas usam Prepared Statements para segurança contra SQL Injection.
-
-    // 1. Contar o total de disciplinas do professor logado.
-    $stmt1 = $conn->prepare("SELECT COUNT(*) AS total FROM disciplina WHERE siape_prof = ?");
+    // 1. Contar o total de disciplinas do professor logado e calcular a carga horária total.
+    $stmt1 = $conn->prepare("SELECT COUNT(*) AS total, SUM(TIME_TO_SEC(ch)) AS total_segundos FROM disciplina WHERE siape_prof = ?");
     if ($stmt1) {
-        $stmt1->bind_param("s", $siape); // Binda o SIAPE do professor à query.
+        $stmt1->bind_param("s", $siape);
         $stmt1->execute();
         $res1 = $stmt1->get_result();
         if ($row = $res1->fetch_assoc()) {
             $totalDisciplinas = $row['total'];
+            $totalCargaHoraria = gmdate('H:i', $row['total_segundos']);
         }
         $stmt1->close();
-    } else {
-        error_log("Erro ao preparar query de Disciplinas: " . $conn->error);
     }
 
-    // 2. Contar o total de relatórios do professor logado.
-    $stmt2 = $conn->prepare("SELECT COUNT(*) AS total FROM relatorio WHERE siape_prof = ?");
+    // 2. Contar o total de turmas distintas associadas às disciplinas do professor.
+    $stmt2 = $conn->prepare("SELECT COUNT(DISTINCT t.id_turma) AS total 
+                            FROM turma t JOIN disciplina d ON t.id_disciplina = d.id_disciplina 
+                            WHERE d.siape_prof = ?");
     if ($stmt2) {
         $stmt2->bind_param("s", $siape);
         $stmt2->execute();
         $res2 = $stmt2->get_result();
         if ($row = $res2->fetch_assoc()) {
-            $totalRelatorios = $row['total'];
+            $totalTurmas = $row['total'];
         }
         $stmt2->close();
-    } else {
-        error_log("Erro ao preparar query de Relatórios: " . $conn->error);
     }
-
-    // 3. Contar o total de reposições pendentes associadas ao professor.
-    $stmt3 = $conn->prepare("SELECT COUNT(*) AS total FROM programada WHERE id_ass_ausente IN 
-                            (SELECT id_ass_ausente FROM prof_ausente WHERE siape_prof = ?)");
+    
+    // 3. Contar o total de reposições pendentes (faltas programadas sem substituto) para o professor logado.
+    $stmt3 = $conn->prepare("SELECT COUNT(*) AS total
+                            FROM programada p
+                            JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
+                            WHERE pa.siape_prof = ? AND p.id_ass_subs IS NULL");
     if ($stmt3) {
         $stmt3->bind_param("s", $siape);
         $stmt3->execute();
@@ -79,60 +71,25 @@ if ($conn) {
             $totalReposPendentes = $row['total'];
         }
         $stmt3->close();
-    } else {
-        error_log("Erro ao preparar query de Reposições Pendentes: " . $conn->error);
     }
 
-    // 4. Contar o total de turmas distintas associadas às disciplinas do professor.
-    $stmt4 = $conn->prepare("SELECT COUNT(DISTINCT t.id_turma) AS total 
-                            FROM turma t JOIN disciplina d ON t.id_disciplina = d.id_disciplina 
-                            WHERE d.siape_prof = ?");
+    // 4. Buscar as 3 próximas reposições agendadas para o professor.
+    $stmt4 = $conn->prepare("SELECT dia, horario FROM programada pa
+                                JOIN prof_ausente a ON pa.id_ass_ausente = a.id_ass_ausente
+                                WHERE a.siape_prof = ?
+                                ORDER BY dia ASC LIMIT 3");
     if ($stmt4) {
         $stmt4->bind_param("s", $siape);
         $stmt4->execute();
         $res4 = $stmt4->get_result();
-        if ($row = $res4->fetch_assoc()) {
-            $totalTurmas = $row['total'];
+        while ($row = $res4->fetch_assoc()) {
+            $reposicoesAgendadas[] = $row;
         }
         $stmt4->close();
-    } else {
-    error_log("Erro ao preparar query de Turmas: " . $conn->error);
     }
 
-    // 5. Buscar os 3 últimos relatórios do professor.
-    $ultimosRelatorios = []; // Inicializa um array vazio.
-    $stmt_relatorios = $conn->prepare("SELECT aulas_substituidas, aulas_cedidas FROM relatorio WHERE siape_prof = ? ORDER BY id_relatorio DESC LIMIT 3");
-    if ($stmt_relatorios) {
-        $stmt_relatorios->bind_param("s", $siape);
-        $stmt_relatorios->execute();
-        $res_relatorios = $stmt_relatorios->get_result();
-        while ($row = $res_relatorios->fetch_assoc()) {
-            $ultimosRelatorios[] = $row; // Adiciona cada linha ao array.
-        }
-        $stmt_relatorios->close();
-    } else {
-        error_log("Erro ao preparar query de Últimos Relatórios: " . $conn->error);
-    }
-
-    // 6. Buscar as 3 próximas reposições agendadas para o professor.
-    $reposicoesAgendadas = []; // Inicializa um array vazio.
-    $stmt_reposicoes = $conn->prepare("SELECT dia, horario FROM programada WHERE id_ass_ausente IN 
-                                    (SELECT id_ass_ausente FROM prof_ausente WHERE siape_prof = ?) ORDER BY dia ASC LIMIT 3");
-    if ($stmt_reposicoes) {
-        $stmt_reposicoes->bind_param("s", $siape);
-        $stmt_reposicoes->execute();
-        $res_reposicoes = $stmt_reposicoes->get_result();
-        while ($row = $res_reposicoes->fetch_assoc()) {
-            $reposicoesAgendadas[] = $row; // Adiciona cada linha ao array.
-        }
-        $stmt_reposicoes->close();
-    } else {
-        error_log("Erro ao preparar query de Reposições Agendadas: " . $conn->error);
-    }
-
-    $conexao->close(); // Fecha a conexão com o banco de dados.
+    $conexao->close();
 } else {
-    // Se a conexão com o banco de dados falhar, registra um erro.
     error_log("Principal.php: Conexão com o banco de dados falhou.");
 }
 ?>
@@ -141,34 +98,265 @@ if ($conn) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Painel do Professor</title>
+    <title>Painel do Professor - SIGA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        /* Estilos CSS (mantidos conforme seu arquivo original) */
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; background-color: #f4f7f8; }
-        .sidebar { width: 220px; height: 100vh; background-color: #386641; color: white; padding-top: 30px; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-        .sidebar h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: white; }
-        .sidebar ul { list-style: none; padding: 0; margin: 0; }
-        .sidebar li { padding: 8px 20px; margin-bottom: 5px; }
-        .sidebar a { color: white; text-decoration: none; font-weight: bold; display: block; padding: 8px 12px; border-radius: 4px; transition: background-color 0.3s; }
-        .sidebar a:hover { background-color: #4d774e; }
-        .sidebar a:active { background-color: #2a5133; }
-        
-        .main { margin-left: 220px; padding: 30px; flex: 1; width: calc(100% - 220px); }
-        .main h1 { color: #2a9d8f; margin-bottom: 30px; }
-        .cards { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
-        .card { background-color: white; padding: 20px; border-radius: 8px; flex: 1; min-width: 180px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); text-align: center; }
-        .card h3 { margin: 0; color: #555; font-size: 16px; margin-bottom: 10px; }
-        .card p { font-size: 28px; font-weight: bold; color: #386641; margin-top: 0; }
-        .card-buttons { display: flex; gap: 10px; margin-top: 15px; justify-content: center; flex-wrap: wrap; }
-        .btn-view, .btn-add { padding: 8px 15px; border-radius: 4px; font-size: 14px; text-decoration: none; text-align: center; flex: 1; min-width: 100px; }
-        .btn-view { background-color: #2a9d8f; color: white; }
-        .btn-add { background-color: #386641; color: white; }
-        .btn-view:hover { background-color: #268074; }
-        .btn-add:hover { background-color: #4d774e; }
-        .section { margin-top: 40px; background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-        .section h2 { margin-bottom: 20px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .list-item { background-color: #f9f9f9; padding: 10px 15px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #2a9d8f; color: #333; }
-        .list-item:last-child { margin-bottom: 0; }
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #386641;
+            --accent-color: #FFC107;
+            --text-color: #333;
+            --text-light-color: #666;
+            --bg-light: #f8f9fa;
+            --bg-dark: #e9ecef;
+            --card-bg: #ffffff;
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08);
+            --border-color: #dee2e6;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            background-color: var(--bg-light);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        /* Sidebar Design */
+        .sidebar {
+            width: 250px;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100%;
+            box-shadow: var(--shadow-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sidebar h2 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        .sidebar li {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            padding: 12px 30px;
+            border-radius: 0 50px 50px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar a i {
+            margin-right: 15px;
+            font-size: 18px;
+        }
+        .sidebar a:hover {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transform: translateX(10px);
+        }
+        .sidebar a.active {
+            background-color: var(--primary-color);
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Main Content Design */
+        .main {
+            margin-left: 250px;
+            padding: 40px;
+            flex: 1;
+            width: calc(100% - 250px);
+        }
+        .main h1 {
+            color: var(--text-color);
+            margin-bottom: 35px;
+            font-size: 32px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+
+        /* Cards Design */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+        .card h3 {
+            margin: 0;
+            color: var(--text-light-color);
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .card p {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 0;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .card p:hover {
+            color: var(--secondary-color);
+        }
+
+        /* Section Design */
+        .section {
+            margin-top: 50px;
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+        }
+        .section h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .list-item {
+            background-color: var(--bg-light);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 5px solid var(--primary-color);
+            color: var(--text-color);
+            font-weight: 400;
+            transition: transform 0.2s ease;
+        }
+        .list-item:hover {
+            transform: translateX(5px);
+        }
+        .list-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Success Message Styling */
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            font-weight: 500;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 80px;
+                padding-top: 20px;
+            }
+            .sidebar h2 {
+                font-size: 18px;
+                margin-bottom: 30px;
+            }
+            .sidebar a {
+                padding: 12px 15px;
+                justify-content: center;
+                border-radius: 8px;
+            }
+            .sidebar a span {
+                display: none;
+            }
+            .sidebar a i {
+                margin-right: 0;
+            }
+            .main {
+                margin-left: 80px;
+                padding: 20px;
+                width: calc(100% - 80px);
+            }
+            .main h1 {
+                font-size: 26px;
+            }
+            .list-container {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                flex-direction: row;
+                justify-content: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                padding: 15px 0;
+            }
+            .sidebar h2 {
+                display: none;
+            }
+            .sidebar ul {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px;
+            }
+            .sidebar li {
+                width: auto;
+            }
+            .sidebar a {
+                padding: 8px 15px;
+                border-radius: 8px;
+            }
+            .main {
+                margin-left: 0;
+                padding: 20px;
+                width: 100%;
+            }
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -176,84 +364,59 @@ if ($conn) {
 <div class="sidebar">
     <h2>Professor</h2>
     <ul>
-        <li><a href="principal.php">📋 Dashboard</a></li>
-        <li><a href="disciplinas.php">📚 Disciplinas</a></li>
-        
-        <li><a href="minhas_reposicoes.php">🔁 Minhas Reposições</a></li>
-        <li><a href="agendar_reposicao.php">🗓️ Agendar Reposição</a></li>
-        <li><a href="programar_falta.php">🗓️ Programar Falta</a></li>
-        <li><a href="calendario.php">🗓️ Calendário de Reposições</a></li>
-
-        <li><a href="relatorios.php">📄 Relatórios</a></li>
-        <li><a href="medias.php">📈 Médias</a></li>
-        <li><a href="ajuda.php">❓ Ajuda</a></li>
-        <li><a href="logout.php">🚪 Sair</a></li>
+        <li><a href="principal.php" class="active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li><a href="minhas_disciplinas.php"><i class="fas fa-book"></i> <span>Minhas Disciplinas</span></a></li>
+        <li><a href="turmas.php"><i class="fas fa-users"></i> <span>Minhas Turmas</span></a></li>
+        <li><a href="minhas_reposicoes.php"><i class="fas fa-redo-alt"></i> <span>Minhas Reposições</span></a></li>
+        <li><a href="agendar_reposicao.php"><i class="fas fa-calendar-plus"></i> <span>Agendar Reposição</span></a></li>
+        <li><a href="programar_falta.php"><i class="fas fa-calendar-times"></i> <span>Programar Falta</span></a></li>
+        <li><a href="calendario.php"><i class="fas fa-calendar-alt"></i> <span>Calendário</span></a></li>
+        <li><a href="gerar_relatorio_pdf.php" target="_blank"><i class="fas fa-file-pdf"></i> <span>Relatório</span></a></li>
+        <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Sair</span></a></li>
     </ul>
 </div>
 
 <div class="main">
     <h1>Bem-vindo(a), <?php echo htmlspecialchars($nome); ?>!</h1>
 
+    <?php if (isset($_SESSION['cadastro_disciplina_success'])): ?>
+        <div class="success-message">
+            <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($_SESSION['cadastro_disciplina_success']); ?> 🎉
+        </div>
+        <?php unset($_SESSION['cadastro_disciplina_success']); ?>
+    <?php endif; ?>
+
     <div class="cards">
         <div class="card">
-            <h3>Disciplinas</h3>
+            <h3>Disciplinas Atribuídas</h3>
             <p><?php echo $totalDisciplinas; ?></p>
-            <div class="card-buttons">
-                <a href="disciplinas.php" class="btn-view">Ver Disciplinas</a>
-                <a href="cadastrar_disciplina.php" class="btn-add">+ Nova Disciplina</a>
-            </div>
+        </div>
+        <div class="card">
+            <h3>Carga Horária Total</h3>
+            <p><?php echo $totalCargaHoraria; ?>h</p>
         </div>
         <div class="card">
             <h3>Turmas</h3>
             <p><?php echo $totalTurmas; ?></p>
-            <div class="card-buttons">
-                <a href="turmas.php" class="btn-view">Ver Turmas</a>
-                <a href="cadastrar_turma.php" class="btn-add">+ Nova Turma</a>
-            </div>
         </div>
         <div class="card">
-            <h3>Reposições Pendentes</h3>
+            <h3>Faltas a Repor</h3>
             <p><?php echo $totalReposPendentes; ?></p>
-            <div class="card-buttons">
-                <a href="minhas_reposicoes.php" class="btn-view">Ver Reposições</a>
-                <a href="agendar_reposicao.php" class="btn-add">+ Agendar</a>
-            </div>
-        </div>
-        <div class="card">
-            <h3>Relatório de Reposições</h3>
-            <p>Gerar PDF</p>
-            <div class="card-buttons">
-                <a href="gerar_relatorio_pdf.php" class="btn-view" target="_blank">Gerar Relatório</a>
-            </div>
         </div>
     </div>
-
+    
     <div class="section">
-        <h2>Últimos Relatórios</h2>
-        <?php
-        if (!empty($ultimosRelatorios)) {
-            foreach ($ultimosRelatorios as $row) {
-                echo "<div class='list-item'>✅ Aulas Substituídas: " . htmlspecialchars($row['aulas_substituidas']) . " | Aulas Cedidas: " . htmlspecialchars($row['aulas_cedidas']) . "</div>";
-            }
-        } else {
-            echo "<div class='list-item'>Nenhum relatório recente.</div>";
-        }
-        ?>
-    </div>
-
-    <div class="section">
-        <h2>Reposições Agendadas</h2>
+        <h2><i class="fas fa-calendar-check"></i> Próximas Reposições Agendadas</h2>
         <?php
         if (!empty($reposicoesAgendadas)) {
             foreach ($reposicoesAgendadas as $row) {
-                echo "<div class='list-item'>📅 " . date('d/m', strtotime($row['dia'])) . " às " . substr($row['horario'], 0, 5) . "</div>";
+                echo "<div class='list-item'>📅 " . date('d/m/Y', strtotime($row['dia'])) . " às " . substr($row['horario'], 0, 5) . "</div>";
             }
         } else {
-            echo "<div class='list-item'>Nenhuma reposição agendada.</div>";
+            echo "<div class='list-item'>Nenhuma reposição agendada para você.</div>";
         }
         ?>
     </div>
 </div>
-
 </body>
 </html>

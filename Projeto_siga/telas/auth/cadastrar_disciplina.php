@@ -54,16 +54,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Define as propriedades no objeto de serviço com os dados coletados.
         $disciplinaServico->set("nome_disciplina", $nome_disciplina);
         $disciplinaServico->set("ch", $carga_horaria_formatada); // Define a carga horária formatada.
-        // Converte o SIAPE do professor para inteiro antes de setar,
-        // garantindo o tipo de dado correto para o banco.
-        $disciplinaServico->set("siape_prof", (int)$siape_professor_logado); 
+        // Passa o SIAPE como string, correspondendo à definição da coluna no banco.
+        $disciplinaServico->set("siape_prof", $siape_professor_logado); 
 
         // --- TENTA CADASTRAR A DISCIPLINA ---
         if ($disciplinaServico->cadastrar()) {
             // Se o cadastro for bem-sucedido, armazena uma mensagem de sucesso na sessão.
             $_SESSION['cadastro_disciplina_success'] = "Disciplina '" . htmlspecialchars($nome_disciplina) . "' cadastrada com sucesso!";
             // Redireciona para a própria página para limpar o formulário e evitar reenvio acidental.
-            header("Location: cadastrar_disciplina.php"); 
+            header("Location: minhas_disciplinas.php"); 
             exit(); // Encerra o script.
         } else {
             // Se o cadastro falhar e nenhuma mensagem de erro específica foi definida
@@ -201,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="submit" class="submit-button">Cadastrar Disciplina</button>
     </form>
 
-    <a href="principal.php" class="back-link">← Voltar ao Dashboard</a>
+    <a href="minhas_disciplinas.php" class="back-link">← Voltar às Minhas Disciplinas</a>
 </div>
 
 </body>
