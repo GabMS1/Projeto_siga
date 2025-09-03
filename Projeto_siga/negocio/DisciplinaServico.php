@@ -28,6 +28,22 @@ class DisciplinaServico {
         return $disciplinaDAO->listarPorProfessor($siape_prof);
     }
     
+    /**
+     * NOVA FUNÇÃO: Serviço para listar disciplinas não atribuídas.
+     */
+    public function listarDisciplinasNaoAtribuidas() {
+        $disciplinaDAO = new DisciplinaDAO();
+        return $disciplinaDAO->listarNaoAtribuidas();
+    }
+    
+    /**
+     * NOVA FUNÇÃO: Serviço para atribuir um professor a uma disciplina.
+     */
+    public function atribuirProfessor($id_disciplina, $siape_prof) {
+        $disciplinaDAO = new DisciplinaDAO();
+        return $disciplinaDAO->atribuirProfessor($id_disciplina, $siape_prof);
+    }
+    
     public function buscarDisciplina($id) {
         $disciplinaDAO = new DisciplinaDAO();
         return $disciplinaDAO->buscarPorId($id);

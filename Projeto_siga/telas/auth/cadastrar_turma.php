@@ -119,10 +119,9 @@ try {
             color: #555;
             font-weight: bold;
         }
-        input[type="text"],
         input[type="number"],
         select {
-            width: calc(100% - 22px);
+            width: 100%; /* Corrigido para ocupar 100% do container */
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -192,18 +191,28 @@ try {
 
     <form action="" method="POST">
         <div class="form-group">
-            <label for="id_turma">ID da Turma:</label>
+            <label for="id_turma">ID da Turma (Ex: 301, 202):</label>
             <input type="number" id="id_turma" name="id_turma" min="1" required>
         </div>
 
         <div class="form-group">
             <label for="curso">Curso:</label>
-            <input type="text" id="curso" name="curso" required>
+            <select id="curso" name="curso" required>
+                <option value="">Selecione o Curso</option>
+                <option value="Agropecuária">Agropecuária</option>
+                <option value="Alimentos">Alimentos</option>
+                <option value="Informática">Informática</option>
+            </select>
         </div>
 
         <div class="form-group">
             <label for="serie">Série:</label>
-            <input type="text" id="serie" name="serie" required>
+            <select id="serie" name="serie" required>
+                <option value="">Selecione a Série</option>
+                <option value="1">1º Ano</option>
+                <option value="2">2º Ano</option>
+                <option value="3">3º Ano</option>
+            </select>
         </div>
 
         <div class="form-group">
@@ -213,11 +222,11 @@ try {
                 <?php if (!empty($disciplinas_professor)): ?>
                     <?php foreach ($disciplinas_professor as $disciplina): ?>
                         <option value="<?php echo htmlspecialchars($disciplina['id_disciplina']); ?>">
-                            <?php echo htmlspecialchars($disciplina['nome_disciplina']); ?> (CH: <?php echo htmlspecialchars(substr($disciplina['ch'], 0, 5)); ?>)
+                            <?php echo htmlspecialchars($disciplina['nome_disciplina']); ?> (CH: <?php echo htmlspecialchars($disciplina['ch']); ?>h)
                         </option>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <option value="" disabled>Nenhuma disciplina encontrada. Cadastre uma primeiro.</option>
+                    <option value="" disabled>Nenhuma disciplina encontrada. Vincule uma primeiro.</option>
                 <?php endif; ?>
             </select>
         </div>

@@ -19,20 +19,6 @@ $disciplinas = [];
 $mensagem = "";
 $sucesso = false;
 
-// Lógica para lidar com a ação de exclusão via POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['acao']) && $_POST['acao'] === 'excluir' && isset($_POST['id_excluir'])) {
-        $id_excluir = trim($_POST['id_excluir']);
-        if ($disciplinaServico->excluirDisciplina($id_excluir)) {
-            $mensagem = "Disciplina excluída com sucesso!";
-            $sucesso = true;
-        } else {
-            $mensagem = "Erro ao excluir a disciplina.";
-            $sucesso = false;
-        }
-    }
-}
-
 // Carrega a lista de disciplinas para exibição
 try {
     $disciplinas = $disciplinaServico->listarDisciplinasPorProfessor($siape);
@@ -48,61 +34,88 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minhas Disciplinas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; background-color: #f4f7f8; }
-        .sidebar { width: 220px; height: 100vh; background-color: #386641; color: white; padding-top: 30px; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-        .sidebar h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: white; }
-        .sidebar ul { list-style: none; padding: 0; margin: 0; }
-        .sidebar li { padding: 8px 20px; margin-bottom: 5px; }
-        .sidebar a { color: white; text-decoration: none; font-weight: bold; display: block; padding: 8px 12px; border-radius: 4px; transition: background-color 0.3s; }
-        .sidebar a:hover { background-color: #4d774e; }
-        .sidebar a.active { background-color: #2a5133; }
-        .main { margin-left: 220px; padding: 30px; flex: 1; width: calc(100% - 220px); }
-        .main h1 { color: #2a9d8f; margin-bottom: 20px; }
-        .btn-add { padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; background-color: #386641; color: white; margin-right: 10px; }
-        .btn-add:hover { background-color: #2a5133; }
-        .table-container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
-        th { background-color: #f2f2f2; color: #555; }
+        :root {
+            --primary-color: #386641;
+            --secondary-color: #2a9d8f;
+            --accent-color: #f4a261;
+            --text-color: #264653;
+            --bg-light: #f8f9fa;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            --border-color: #dee2e6;
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; background-color: var(--bg-light); }
+        .sidebar { width: 250px; background-color: var(--primary-color); color: white; position: fixed; height: 100%; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; }
+        .sidebar h2 { font-size: 1.5em; font-weight: 700; margin-bottom: 30px; margin-top: 20px;}
+        .sidebar ul { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .sidebar li { width: 100%; margin-bottom: 5px; }
+        .sidebar a { color: white; text-decoration: none; font-weight: 500; display: flex; align-items: center; padding: 12px 25px; transition: all 0.3s ease; }
+        .sidebar a i { margin-right: 15px; font-size: 1.1em; width: 20px; text-align: center; }
+        .sidebar a:hover, .sidebar a.active { background-color: rgba(255, 255, 255, 0.2); border-left: 4px solid var(--accent-color); padding-left: 21px; }
+        
+        .main-content { margin-left: 250px; padding: 30px; flex: 1; width: calc(100% - 250px); }
+        .container { background-color: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: var(--shadow); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { color: var(--text-color); margin: 0; font-size: 1.8em; font-weight: 600;}
+        
+        .btn { padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 500; cursor: pointer; border: none; transition: background-color 0.3s ease; color: white; }
+        .btn-add { background-color: var(--secondary-color); }
+        .btn-add:hover { background-color: #218e81; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #f2f2f2; color: #555; font-weight: 600; }
         tr:hover { background-color: #f9f9f9; }
-        .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; font-weight: bold; }
+        
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; font-weight: 500; }
         .alert-success { background-color: #d4edda; color: #155724; }
         .alert-danger { background-color: #f8d7da; color: #721c24; }
-        .actions-cell { display: flex; gap: 5px; }
-        .btn-edit { background-color: #007bff; color:white; padding: 5px 10px; border-radius: 4px; text-decoration: none; }
-        .btn-delete { background-color: #dc3545; color:white; padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; }
+        
+        .actions-cell { display: flex; gap: 10px; }
+        .btn-edit { background-color: #007bff; }
+        .btn-edit:hover { background-color: #0069d9; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h2>Professor</h2>
+    <h2>SIGA</h2>
     <ul>
-        <li><a href="principal.php">📋 Dashboard</a></li>
-        <li><a href="minhas_disciplinas.php" class="active">📚 Minhas Disciplinas</a></li>
-        <li><a href="turmas.php">🧑‍🏫 Minhas Turmas</a></li>
-        <li><a href="logout.php">🚪 Sair</a></li>
+        <li><a href="principal.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li><a href="minhas_disciplinas.php" class="active"><i class="fas fa-book"></i> <span>Disciplinas</span></a></li>
+        <li><a href="turmas.php"><i class="fas fa-users"></i> <span>Turmas</span></a></li>
+        <li><a href="minhas_reposicoes.php"><i class="fas fa-history"></i> <span>Reposições</span></a></li>
+        <li><a href="agendar_reposicao.php"><i class="fas fa-calendar-plus"></i> <span>Agendar Reposição</span></a></li>
+        <li><a href="programar_falta.php"><i class="fas fa-calendar-times"></i> <span>Programar Falta</span></a></li>
+        <li><a href="calendario.php"><i class="fas fa-calendar-alt"></i> <span>Calendário Geral</span></a></li>
+        <li><a href="gerar_relatorio_pdf.php" target="_blank"><i class="fas fa-file-pdf"></i> <span>Gerar Relatório</span></a></li>
+        <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Sair</span></a></li>
     </ul>
 </div>
 
-<div class="main">
-    <h1>Minhas Disciplinas</h1>
+<div class="main-content">
+    <div class="container">
+        <div class="header">
+            <h1>Minhas Disciplinas</h1>
+            <a href="vincular_disciplina.php" class="btn btn-add"><i class="fas fa-link"></i> Vincular Nova Disciplina</a>
+        </div>
 
-    <?php 
-    if (isset($_SESSION['op_success'])) {
-        echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['op_success']) . '</div>';
-        unset($_SESSION['op_success']);
-    }
-    if ($mensagem) {
-        echo '<div class="alert ' . ($sucesso ? 'alert-success' : 'alert-danger') . '">' . htmlspecialchars($mensagem) . '</div>';
-    }
-    ?>
+        <?php 
+        if (isset($_SESSION['op_success'])) {
+            echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['op_success']) . '</div>';
+            unset($_SESSION['op_success']);
+        }
+        if ($mensagem) {
+            echo '<div class="alert ' . ($sucesso ? 'alert-success' : 'alert-danger') . '">' . htmlspecialchars($mensagem) . '</div>';
+        }
+        ?>
 
-    <a href="vincular_disciplina.php" class="btn-add" style="background-color:#2a9d8f;">Vincular Nova Disciplina</a>
-
-    <div class="table-container">
         <h2>Disciplinas Vinculadas (Total: <?php echo count($disciplinas); ?>)</h2>
+        
         <?php if (!empty($disciplinas)): ?>
             <table>
                 <thead>
@@ -111,7 +124,6 @@ try {
                         <th>Nome da Disciplina</th>
                         <th>Carga Horária</th>
                         <th>Aulas Semanais</th>
-                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -121,9 +133,6 @@ try {
                             <td><?php echo htmlspecialchars($disciplina['nome_disciplina']); ?></td>
                             <td><?php echo htmlspecialchars($disciplina['ch']); ?>h</td>
                             <td><?php echo htmlspecialchars($disciplina['aulas_semanais']); ?></td>
-                            <td class="actions-cell">
-                                <a href="editar_disciplina.php?id=<?php echo htmlspecialchars($disciplina['id_disciplina']); ?>" class="btn-edit">Editar</a>
-                                </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

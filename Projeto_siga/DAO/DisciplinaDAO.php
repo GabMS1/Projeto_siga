@@ -12,7 +12,6 @@ class DisciplinaDAO {
     }
 
     public function cadastrar($nome_disciplina, $ch, $siape_prof) {
-        // Corrigido para ch ser INT, conforme o banco de dados
         $sql = "INSERT INTO disciplina (nome_disciplina, ch, siape_prof) VALUES (?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) {
@@ -27,7 +26,7 @@ class DisciplinaDAO {
 
     public function listarTodos() {
         $disciplinas = [];
-        $sql = "SELECT id_disciplina, nome_disciplina, ch FROM disciplina ORDER BY nome_disciplina ASC";
+        $sql = "SELECT id_disciplina, nome_disciplina, ch, aulas_semanais FROM disciplina ORDER BY nome_disciplina ASC";
         $stmt = $this->conn->prepare($sql);
         
         if (!$stmt) {
@@ -46,7 +45,7 @@ class DisciplinaDAO {
     
     public function listarPorProfessor($siape_prof) {
         $disciplinas = [];
-        $sql = "SELECT id_disciplina, nome_disciplina, ch FROM disciplina WHERE siape_prof = ? ORDER BY nome_disciplina ASC";
+        $sql = "SELECT id_disciplina, nome_disciplina, ch, aulas_semanais FROM disciplina WHERE siape_prof = ? ORDER BY nome_disciplina ASC";
         $stmt = $this->conn->prepare($sql);
         
         if (!$stmt) {
@@ -63,9 +62,31 @@ class DisciplinaDAO {
         $stmt->close();
         return $disciplinas;
     }
+    
+    /**
+     * NOVA FUNÇÃO: Lista todas as disciplinas que ainda não foram atribuídas a um professor.
+     */
+    public function listarNaoAtribuidas() {
+        $disciplinas = [];
+        $sql = "SELECT id_disciplina, nome_disciplina, ch, aulas_semanais FROM disciplina WHERE siape_prof IS NULL ORDER BY nome_disciplina ASC";
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!$stmt) {
+            error_log("DisciplinaDAO->listarNaoAtribuidas: Erro ao preparar query - " . $this->conn->error);
+            throw new Exception("Erro ao preparar a busca de disciplinas não atribuídas: " . $this->conn->error);
+        }
+
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        while ($linha = $resultado->fetch_assoc()) {
+            $disciplinas[] = $linha;
+        }
+        $stmt->close();
+        return $disciplinas;
+    }
 
     public function buscarPorId($id) {
-        $sql = "SELECT id_disciplina, nome_disciplina, ch FROM disciplina WHERE id_disciplina = ?";
+        $sql = "SELECT id_disciplina, nome_disciplina, ch, aulas_semanais FROM disciplina WHERE id_disciplina = ?";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) {
             error_log("DisciplinaDAO->buscarPorId: Erro ao preparar query - " . $this->conn->error);
@@ -78,6 +99,23 @@ class DisciplinaDAO {
         $stmt->close();
         return $disciplina;
     }
+    
+    /**
+     * NOVA FUNÇÃO: Atribui um professor a uma disciplina.
+     */
+    public function atribuirProfessor($id_disciplina, $siape_prof) {
+        $sql = "UPDATE disciplina SET siape_prof = ? WHERE id_disciplina = ?";
+        $stmt = $this->conn->prepare($sql);
+        if (!$stmt) {
+            error_log("DisciplinaDAO->atribuirProfessor: Erro ao preparar query - " . $this->conn->error);
+            return false;
+        }
+        $stmt->bind_param("si", $siape_prof, $id_disciplina);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
 
     public function atualizar($id, $nome_disciplina, $ch) {
         $sql = "UPDATE disciplina SET nome_disciplina = ?, ch = ? WHERE id_disciplina = ?";
