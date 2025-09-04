@@ -11,14 +11,17 @@ if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin'
 
 require_once __DIR__ . '/../../negocio/TurmaServico.php';
 
-$turma_detalhes = null;
+$turma_detalhes = [];
 $mensagem = '';
+$id_turma_get = null;
 
 if (isset($_GET['id_turma'])) {
-    $id_turma = filter_input(INPUT_GET, 'id_turma', FILTER_VALIDATE_INT);
-    if ($id_turma) {
+    $id_turma_get = filter_input(INPUT_GET, 'id_turma', FILTER_VALIDATE_INT);
+    if ($id_turma_get) {
         $turmaServico = new TurmaServico();
-        $turma_detalhes = $turmaServico->listarProfessoresDaTurma($id_turma);
+        // Chamando o método que retorna a lista completa
+        $turma_detalhes = $turmaServico->listarProfessoresDaTurma($id_turma_get);
+        
         if (empty($turma_detalhes)) {
             $mensagem = "Nenhuma disciplina ou professor encontrado para esta turma, ou a turma não existe.";
         }
@@ -47,7 +50,7 @@ if (isset($_GET['id_turma'])) {
             --shadow-color: rgba(0, 0, 0, 0.08);
             --border-color: #E0E0E0;
         }
-        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background-color: var(--background-light); padding-top: 40px; }
+        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background-color: var(--background-light); padding: 40px; box-sizing: border-box; }
         .container { 
             background-color: white; 
             padding: 40px; 
@@ -56,7 +59,7 @@ if (isset($_GET['id_turma'])) {
             max-width: 800px; 
             width: 100%; 
         }
-        h1 { color: var(--text-color); margin-bottom: 5px; text-align: center; }
+        h1 { color: var(--text-color); margin-bottom: 5px; text-align: center; font-weight: 600; font-size: 2em;}
         .turma-subtitulo { 
             font-size: 1.2em; 
             color: #555; 
@@ -67,7 +70,7 @@ if (isset($_GET['id_turma'])) {
         }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 15px; border-bottom: 1px solid var(--border-color); text-align: left; }
-        th { background-color: #f8f9fa; font-weight: 600; }
+        th { background-color: #f8f9fa; font-weight: 600; text-transform: uppercase; font-size: 0.9em; }
         .btn-back { 
             background-color: #6c757d; 
             color: white; 
@@ -90,6 +93,7 @@ if (isset($_GET['id_turma'])) {
 
     <?php if (!empty($turma_detalhes)): ?>
         <p class="turma-subtitulo">
+            <strong>Turma:</strong> <?= htmlspecialchars($id_turma_get) ?> | 
             <strong>Curso:</strong> <?= htmlspecialchars($turma_detalhes[0]['curso']) ?> | 
             <strong>Série:</strong> <?= htmlspecialchars($turma_detalhes[0]['serie']) ?>º Ano
         </p>

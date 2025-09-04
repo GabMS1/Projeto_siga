@@ -10,9 +10,27 @@ if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin'
 
 require_once __DIR__ . '/../../negocio/TurmaServico.php';
 
-$turmas = [];
 $turmaServico = new TurmaServico();
-$turmas = $turmaServico->listarTodasAsTurmas(); 
+$turmas_raw = $turmaServico->listarTodasAsTurmas(); 
+
+// Agrupar disciplinas por turma
+$turmas_agrupadas = [];
+foreach ($turmas_raw as $turma) {
+    $id_turma = $turma['id_turma'];
+    if (!isset($turmas_agrupadas[$id_turma])) {
+        $turmas_agrupadas[$id_turma] = [
+            'id_turma' => $id_turma,
+            'curso' => $turma['curso'],
+            'serie' => $turma['serie'],
+            'disciplinas' => []
+        ];
+    }
+    $turmas_agrupadas[$id_turma]['disciplinas'][] = [
+        'id_disciplina' => $turma['id_disciplina'],
+        'nome_disciplina' => $turma['nome_disciplina'],
+        'nome_professor' => $turma['nome_professor']
+    ];
+}
 
 ?>
 <!DOCTYPE html>
@@ -87,16 +105,22 @@ $turmas = $turmaServico->listarTodasAsTurmas();
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         th { background-color: #f8f9fa; color: #555; font-weight: 600; text-transform: uppercase; font-size: 0.9em; }
-        tr:not(.actions-row):hover { background-color: #f8f9fa; }
+        tr:not(.turma-header):hover { background-color: #f8f9fa; }
         
+        .turma-header { background-color: var(--primary-color) !important; color: white; font-size: 1.1em; }
+        .turma-header td { padding: 12px 15px; }
+        .turma-header a { color: var(--accent-color); text-decoration: none; font-weight: 600; }
+        .turma-header a:hover { text-decoration: underline; }
+        .disciplina-row td { padding-left: 30px; }
+
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 10px; font-weight: 500; border: 1px solid transparent; }
         .alert-success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
 
         .btn-action {
-            padding: 8px 15px;
+            padding: 6px 12px;
             border-radius: 50px;
             text-decoration: none;
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: white;
             border: none;
             cursor: pointer;
@@ -108,8 +132,6 @@ $turmas = $turmaServico->listarTodasAsTurmas();
         }
         .btn-action:hover { opacity: 0.8; transform: translateY(-2px); }
         .btn-edit { background-color: var(--info-color); }
-        .btn-view { background-color: var(--secondary-color); }
-        .actions-row td { padding-top: 15px; border-bottom: 2px solid var(--primary-color); }
     </style>
 </head>
 <body>
@@ -131,7 +153,7 @@ $turmas = $turmaServico->listarTodasAsTurmas();
 <div class="main-content">
     <div class="header">
         <h1>Gerenciar Turmas</h1>
-        <a href="cadastrar_turma_adm.php" class="btn-add"><i class="fas fa-plus"></i> Nova Turma</a>
+        <a href="cadastrar_turma_adm.php" class="btn-add"><i class="fas fa-plus"></i> Nova Turma/Disciplina</a>
     </div>
 
     <?php if(isset($_SESSION['op_success'])): ?>
@@ -142,48 +164,38 @@ $turmas = $turmaServico->listarTodasAsTurmas();
         <table>
             <thead>
                 <tr>
-                    <th>Turma</th>
-                    <th>Curso</th>
                     <th>Disciplina</th>
                     <th>Professor</th>
                     <th>Ação</th>
                 </tr>
             </thead>
             <tbody>
-                <?php if (!empty($turmas)):
-                    $turmas_agrupadas = [];
-                    foreach ($turmas as $turma) {
-                        $turmas_agrupadas[$turma['id_turma']][] = $turma;
-                    }
-                ?>
-                    <?php foreach ($turmas_agrupadas as $id_turma => $disciplinas_turma): 
-                        $first = true;
-                        $rowCount = count($disciplinas_turma);
-                    ?>
-                        <?php foreach ($disciplinas_turma as $disciplina_info): ?>
-                            <tr>
-                                <?php if ($first): ?>
-                                    <td rowspan="<?= $rowCount ?>"><strong><?= htmlspecialchars($id_turma) ?></strong></td>
-                                    <td rowspan="<?= $rowCount ?>"><?= htmlspecialchars($disciplina_info['curso']) . ' - ' . htmlspecialchars($disciplina_info['serie']) . 'º Ano' ?></td>
-                                <?php endif; ?>
-                                <td><?= htmlspecialchars($disciplina_info['nome_disciplina']) ?></td>
-                                <td><?= htmlspecialchars($disciplina_info['nome_professor'] ?? '<em>Não atribuído</em>') ?></td>
+                <?php if (!empty($turmas_agrupadas)): ?>
+                    <?php foreach ($turmas_agrupadas as $id_turma => $turma_info): ?>
+                        <tr class="turma-header">
+                            <td colspan="3">
+                                <strong>Turma <?= htmlspecialchars($turma_info['id_turma']) ?></strong> - 
+                                <?= htmlspecialchars($turma_info['curso']) . ' ' . htmlspecialchars($turma_info['serie']) . 'º Ano' ?>
+                                <a href="ver_professores_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>" style="float: right;">
+                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                </a>
+                            </td>
+                        </tr>
+                        <?php foreach ($turma_info['disciplinas'] as $disciplina): ?>
+                            <tr class="disciplina-row">
+                                <td><?= htmlspecialchars($disciplina['nome_disciplina']) ?></td>
+                                <td><?= htmlspecialchars($disciplina['nome_professor'] ?? '<em>Não atribuído</em>') ?></td>
                                 <td>
-                                    <?php if ($first): ?>
-                                        <a href="atribuir_professor_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>&id_disciplina=<?= $disciplina_info['id_disciplina'] ?>" class="btn-action btn-edit"><i class="fas fa-user-edit"></i> Atribuir</a>
-                                    <?php $first = false; endif; ?>
+                                    <a href="atribuir_professor_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>&id_disciplina=<?= $disciplina['id_disciplina'] ?>" class="btn-action btn-edit">
+                                        <i class="fas fa-user-edit"></i> Atribuir/Alterar
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        <tr class="actions-row">
-                            <td colspan="5" style="text-align: right;">
-                                <a href="ver_professores_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>" class="btn-action btn-view"><i class="fas fa-eye"></i> Ver Professores</a>
-                            </td>
-                        </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5" style="text-align:center; padding: 20px;">Nenhuma turma cadastrada.</td>
+                        <td colspan="3" style="text-align:center; padding: 20px;">Nenhuma turma cadastrada.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

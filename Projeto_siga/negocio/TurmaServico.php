@@ -33,17 +33,10 @@ class TurmaServico {
 
     /**
      * Realiza o cadastro de uma nova turma.
-     * Inclui validações de unicidade do ID da turma e existência da chave estrangeira.
      * @return bool True se o cadastro for bem-sucedido, false caso contrário.
      */
     public function cadastrar() {
         $turmaDAO = new TurmaDAO();
-
-        // Validação de unicidade do ID da turma, já que não é AUTO_INCREMENT.
-        if ($turmaDAO->buscarPorId((int)$this->id_turma)) {
-            $_SESSION['cadastro_turma_error'] = "O ID da turma '" . htmlspecialchars($this->id_turma) . "' já existe. Por favor, escolha outro.";
-            return false;
-        }
 
         // Define as propriedades no objeto DAO com os dados recebidos.
         $turmaDAO->set("id_turma", (int)$this->id_turma); // Converte para INT
@@ -57,7 +50,6 @@ class TurmaServico {
 
     /**
      * Busca a lista de disciplinas para popular o dropdown no formulário de turma.
-     * Reutiliza o DisciplinaServico para isso.
      * @param string|null $siape_prof O SIAPE do professor logado (ou null para admin).
      * @return array Um array de disciplinas.
      */
@@ -66,34 +58,30 @@ class TurmaServico {
         if ($siape_prof) {
             return $disciplinaServico->listarDisciplinasPorProfessor($siape_prof);
         } else {
-            // Se nenhum siape é fornecido, lista todas as disciplinas (para o admin)
             return $disciplinaServico->listarDisciplinas();
         }
     }
 
     /**
      * Lista todas as turmas associadas a um professor específico.
-     * Este método chama o DAO para buscar os dados.
      * @param string $siape_prof O SIAPE do professor para buscar as turmas.
      * @return array Um array de turmas ou um array vazio se nenhuma for encontrada.
      */
     public function listarTurmas($siape_prof) {
         $turmaDAO = new TurmaDAO();
-        // Chama o método no DAO para buscar as turmas pelo SIAPE do professor.
         $turmas = $turmaDAO->buscarTurmasPorProfessor($siape_prof);
-        
-        // Garante que sempre retornemos um array, mesmo que o DAO retorne false.
         return $turmas !== false ? $turmas : [];
     }
     
     /**
      * Busca os dados completos de uma turma para a tela de atribuição de professor.
      * @param int $id_turma O ID da turma a ser buscada.
+     * @param int $id_disciplina O ID da disciplina específica dentro da turma.
      * @return array|false Retorna os dados da turma ou false se não for encontrada.
      */
-    public function buscarTurmaParaEdicao($id_turma) {
+    public function buscarTurmaParaEdicao($id_turma, $id_disciplina) {
         $turmaDAO = new TurmaDAO();
-        return $turmaDAO->buscarTurmaCompletaPorId($id_turma);
+        return $turmaDAO->buscarTurmaCompletaPorId($id_turma, $id_disciplina);
     }
 
     /**
