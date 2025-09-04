@@ -13,7 +13,7 @@ require_once __DIR__ . '/../../negocio/TurmaServico.php';
 
 $turmas = [];
 $turmaServico = new TurmaServico();
-$turmas = $turmaServico->listarTodasAsTurmas(); // Precisaremos criar este método
+$turmas = $turmaServico->listarTodasAsTurmas(); 
 
 ?>
 <!DOCTYPE html>
@@ -35,13 +35,20 @@ $turmas = $turmaServico->listarTodasAsTurmas(); // Precisaremos criar este méto
         .main-content { margin-left: 250px; padding: 30px; flex: 1; }
         .container { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; text-decoration: none; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; text-decoration: none; font-weight: 500; }
         .btn-success { background-color: var(--secondary-color); }
+        .btn-success:hover { background-color: #218e81; }
+        .btn-action { font-size: 0.9em; padding: 8px 12px; text-align: center; display: inline-block; margin-top: 5px;}
+        .btn-edit { background-color: #007bff; }
+        .btn-edit:hover { background-color: #0069d9; }
+        .btn-view { background-color: #17a2b8; }
+        .btn-view:hover { background-color: #138496; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         th { background-color: #f2f2f2; }
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; }
         .alert-success { background-color: #d4edda; color: #155724; }
+        .actions-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
     </style>
 </head>
 <body>
@@ -77,22 +84,38 @@ $turmas = $turmaServico->listarTodasAsTurmas(); // Precisaremos criar este méto
                     <th>Série</th>
                     <th>Disciplina</th>
                     <th>Professor</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (!empty($turmas)): ?>
-                    <?php foreach ($turmas as $turma): ?>
+                    <?php 
+                        $turmas_agrupadas = [];
+                        foreach ($turmas as $turma) {
+                            $turmas_agrupadas[$turma['id_turma']]['detalhes'] = ['curso' => $turma['curso'], 'serie' => $turma['serie']];
+                            $turmas_agrupadas[$turma['id_turma']]['disciplinas'][] = $turma;
+                        }
+                    ?>
+                    <?php foreach ($turmas_agrupadas as $id_turma => $dados_turma): ?>
                         <tr>
-                            <td><?= htmlspecialchars($turma['id_turma']) ?></td>
-                            <td><?= htmlspecialchars($turma['curso']) ?></td>
-                            <td><?= htmlspecialchars($turma['serie']) ?>º Ano</td>
-                            <td><?= htmlspecialchars($turma['nome_disciplina']) ?></td>
-                            <td><?= htmlspecialchars($turma['nome_professor'] ?? 'Não atribuído') ?></td>
+                            <td rowspan="<?= count($dados_turma['disciplinas']) + 1 ?>"><?= htmlspecialchars($id_turma) ?></td>
+                            <td rowspan="<?= count($dados_turma['disciplinas']) + 1 ?>"><?= htmlspecialchars($dados_turma['detalhes']['curso']) ?></td>
+                            <td rowspan="<?= count($dados_turma['disciplinas']) + 1 ?>"><?= htmlspecialchars($dados_turma['detalhes']['serie']) ?>º Ano</td>
                         </tr>
+                        <?php foreach ($dados_turma['disciplinas'] as $disciplina_info): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($disciplina_info['nome_disciplina']) ?></td>
+                                <td><?= htmlspecialchars($disciplina_info['nome_professor'] ?? 'Não atribuído') ?></td>
+                                <td class="actions-cell">
+                                    <a href="atribuir_professor_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>&id_disciplina=<?= $disciplina_info['id_disciplina'] ?>" class="btn btn-action btn-edit">Atribuir Professor</a>
+                                    <a href="ver_professores_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>" class="btn btn-action btn-view">Ver Professores</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5" style="text-align:center;">Nenhuma turma cadastrada.</td>
+                        <td colspan="6" style="text-align:center;">Nenhuma turma cadastrada.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

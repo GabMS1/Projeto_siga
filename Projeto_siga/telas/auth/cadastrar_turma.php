@@ -10,24 +10,23 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../../negocio/TurmaServico.php';
 
 // --- PROTEÇÃO DE ROTA ---
-// Verifica se o usuário está logado E se o tipo de usuário é 'professor'.
-// Apenas professores podem acessar esta página e cadastrar turmas.
-if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'professor') {
-    $_SESSION['login_error'] = "Acesso negado. Faça login como professor para cadastrar turmas.";
+// Apenas administradores podem acessar esta página para cadastrar turmas.
+if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin') {
+    $_SESSION['login_error'] = "Acesso negado. Apenas administradores podem cadastrar turmas.";
     header("Location: login.php"); // Redireciona para a página de login.
     exit(); // Encerra o script.
 }
 
-// Pega o SIAPE do professor logado da sessão. Isso será usado para vincular a turma.
-$siape_professor_logado = $_SESSION['usuario_logado'];
+// Pega o SIAPE do administrador logado da sessão.
+$siape_admin_logado = $_SESSION['usuario_logado'];
 
-$disciplinas_professor = []; // Para armazenar as disciplinas do professor para o dropdown
+$disciplinas_disponiveis = []; // Para armazenar as disciplinas para o dropdown
 $mensagem = ""; // Para mensagens de feedback
 
 try {
     $turmaServico = new TurmaServico();
-    // Obtém a lista de disciplinas que este professor leciona para popular o dropdown.
-    $disciplinas_professor = $turmaServico->listarDisciplinasParaSelecao((int)$siape_professor_logado);
+    // Lista todas as disciplinas para o admin escolher
+    $disciplinas_disponiveis = $turmaServico->listarDisciplinasParaSelecao(null); // Passar null ou um método que lista todas
 
     // Se o formulário foi submetido via POST.
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -50,13 +49,11 @@ try {
             $turmaServico->set("curso", $curso);
             $turmaServico->set("serie", $serie);
             $turmaServico->set("id_disciplina", (int)$id_disciplina);
-            $turmaServico->set("siape_prof", (int)$siape_professor_logado);
 
             // Tenta cadastrar a turma.
             if ($turmaServico->cadastrar()) {
                 $_SESSION['cadastro_turma_success'] = "Turma cadastrada com sucesso! ID: " . htmlspecialchars($id_turma);
-                // Redireciona para a própria página para limpar o formulário e evitar reenvio.
-                header("Location: cadastrar_turma.php"); 
+                header("Location: gerenciar_turmas.php"); 
                 exit();
             } else {
                 // A mensagem de erro específica já deve ter sido definida no Serviço/DAO.
@@ -81,7 +78,7 @@ try {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Cadastrar Nova Turma</title>
+    <title>Admin: Cadastrar Nova Turma</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -121,7 +118,7 @@ try {
         }
         input[type="number"],
         select {
-            width: 100%; /* Corrigido para ocupar 100% do container */
+            width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -174,7 +171,6 @@ try {
     <h1>Cadastrar Nova Turma</h1>
 
     <?php
-    // Exibe mensagens de feedback (sucesso ou erro)
     if (isset($_SESSION['cadastro_turma_success'])) {
         echo '<p class="success-message">' . $_SESSION['cadastro_turma_success'] . '</p>';
         unset($_SESSION['cadastro_turma_success']);
@@ -183,7 +179,6 @@ try {
         echo '<p class="error-message">' . $_SESSION['cadastro_turma_error'] . '</p>';
         unset($_SESSION['cadastro_turma_error']);
     }
-    // Mensagens de erro ao carregar dados (ex: erro de conexão)
     if (!empty($mensagem)) {
         echo '<p class="error-message">' . htmlspecialchars($mensagem) . '</p>';
     }
@@ -219,14 +214,14 @@ try {
             <label for="id_disciplina">Disciplina:</label>
             <select id="id_disciplina" name="id_disciplina" required>
                 <option value="">Selecione uma Disciplina</option>
-                <?php if (!empty($disciplinas_professor)): ?>
-                    <?php foreach ($disciplinas_professor as $disciplina): ?>
+                <?php if (!empty($disciplinas_disponiveis)): ?>
+                    <?php foreach ($disciplinas_disponiveis as $disciplina): ?>
                         <option value="<?php echo htmlspecialchars($disciplina['id_disciplina']); ?>">
-                            <?php echo htmlspecialchars($disciplina['nome_disciplina']); ?> (CH: <?php echo htmlspecialchars($disciplina['ch']); ?>h)
+                            <?php echo htmlspecialchars($disciplina['nome_disciplina']); ?>
                         </option>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <option value="" disabled>Nenhuma disciplina encontrada. Vincule uma primeiro.</option>
+                    <option value="" disabled>Nenhuma disciplina encontrada.</option>
                 <?php endif; ?>
             </select>
         </div>
@@ -234,7 +229,7 @@ try {
         <button type="submit" class="submit-button">Cadastrar Turma</button>
     </form>
 
-    <a href="principal.php" class="back-link">← Voltar ao Dashboard</a>
+    <a href="gerenciar_turmas.php" class="back-link">← Voltar ao Gerenciamento de Turmas</a>
 </div>
 
 </body>

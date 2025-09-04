@@ -9,15 +9,29 @@ require_once __DIR__ . '/Conexao.php';
  * relacionadas às turmas (tabela 'turma').
  */
 class TurmaDAO {
+    private $conn;
+
+    /**
+     * Construtor da classe que estabelece a conexão com o banco de dados.
+     */
+    public function __construct() {
+        $conexao = new Conexao();
+        $this->conn = $conexao->get_connection();
+    }
 
     public function buscarTodas() {
         $turmas = [];
-        $sql = "SELECT t.id_turma, t.curso, t.serie, d.nome_disciplina, p.nome as nome_professor
+        $sql = "SELECT t.id_turma, t.curso, t.serie, d.id_disciplina, d.nome_disciplina, p.nome as nome_professor
                 FROM turma t
                 JOIN disciplina d ON t.id_disciplina = d.id_disciplina
                 LEFT JOIN professor p ON d.siape_prof = p.siape_prof
-                ORDER BY t.id_turma ASC";
+                ORDER BY t.id_turma, d.nome_disciplina ASC";
         
+        if (!$this->conn) {
+            error_log("TurmaDAO - Falha na conexão com o banco de dados.");
+            return [];
+        }
+
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) return [];
 
@@ -29,11 +43,12 @@ class TurmaDAO {
         $stmt->close();
         return $turmas;
     }
+
     // Propriedades para armazenar os dados da turma.
     public $id_turma;
     public $curso;
     public $serie;
-    public $id_disciplina; // Chave estrangeira para a disciplina
+    public $id_disciplina;
 
     /**
      * Define um valor para uma propriedade específica do DAO.
@@ -46,49 +61,36 @@ class TurmaDAO {
 
     /**
      * Cadastra uma nova turma no banco de dados.
-     * Assume que as validações de unicidade e existência das chaves estrangeiras
-     * (id_disciplina) serão feitas na camada de serviço.
      * @return bool True se o cadastro for bem-sucedido, false caso contrário.
      */
     public function cadastrar() {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-
-        if (!$conn) {
-            error_log("TurmaDAO - Falha na conexão com o banco de dados.");
+        if (!$this->conn) {
             $_SESSION['cadastro_turma_error'] = "Erro interno do servidor. Tente novamente mais tarde.";
             return false;
         }
 
-        // Prepara a consulta SQL para inserir uma nova turma.
-        // O campo siape_prof não existe na tabela turma.
         $SQL = "INSERT INTO turma (id_turma, curso, serie, id_disciplina) VALUES (?, ?, ?, ?)";
-        $stmt = $conn->prepare($SQL);
+        $stmt = $this->conn->prepare($SQL);
 
         if (!$stmt) {
-            error_log("TurmaDAO - Erro ao preparar a query de cadastro: " . $conn->error);
             $_SESSION['cadastro_turma_error'] = "Erro interno ao preparar o cadastro da turma.";
-            $conexao->close();
             return false;
         }
 
-        // 'issi' indica: int, string, string, int
         $stmt->bind_param("issi", $this->id_turma, $this->curso, $this->serie, $this->id_disciplina);
         $success = $stmt->execute();
 
         if (!$success) {
-            error_log("TurmaDAO - Erro ao executar a query de cadastro: " . $stmt->error);
-            if ($stmt->errno == 1062) { // Código de erro para entrada duplicada
-                $_SESSION['cadastro_turma_error'] = "O ID da turma já existe. Por favor, escolha outro.";
-            } elseif ($stmt->errno == 1452) { // Código de erro para chave estrangeira inválida
-                 $_SESSION['cadastro_turma_error'] = "Disciplina associada não encontrada. Verifique os dados.";
+            if ($stmt->errno == 1062) {
+                $_SESSION['cadastro_turma_error'] = "O ID da turma já existe para outra disciplina. Cadastre a disciplina nesta turma existente.";
+            } elseif ($stmt->errno == 1452) {
+                 $_SESSION['cadastro_turma_error'] = "Disciplina associada não encontrada.";
             } else {
                 $_SESSION['cadastro_turma_error'] = "Erro no banco de dados durante o cadastro da turma.";
             }
         }
 
         $stmt->close();
-        $conexao->close();
         return $success;
     }
 
@@ -98,21 +100,11 @@ class TurmaDAO {
      * @return bool True se o ID da turma já existe, false caso contrário.
      */
     public function buscarPorId($id_turma) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        if (!$conn) {
-            error_log("TurmaDAO - Falha na conexão ao buscar turma por ID.");
-            return false;
-        }
+        if (!$this->conn) return false;
 
         $SQL = "SELECT id_turma FROM turma WHERE id_turma = ?";
-        $stmt = $conn->prepare($SQL);
-
-        if (!$stmt) {
-            error_log("TurmaDAO - Erro ao preparar busca por ID de turma: " . $conn->error);
-            $conexao->close();
-            return false;
-        }
+        $stmt = $this->conn->prepare($SQL);
+        if (!$stmt) return false;
 
         $stmt->bind_param("i", $id_turma);
         $stmt->execute();
@@ -120,52 +112,98 @@ class TurmaDAO {
         $num_rows = $result->num_rows;
 
         $stmt->close();
-        $conexao->close();
         return $num_rows > 0;
     }
 
     /**
-     * Busca todas as turmas associadas a um professor específico,
-     * incluindo o nome da disciplina a que pertencem.
+     * Busca todas as turmas associadas a um professor específico.
      * @param string $siape_prof O SIAPE do professor.
-     * @return array|false Um array de arrays associativos com os dados das turmas,
-     * ou um array vazio se nenhuma turma for encontrada, ou false em caso de erro na conexão.
+     * @return array|false Um array de turmas ou false em caso de erro.
      */
     public function buscarTurmasPorProfessor($siape_prof) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        if (!$conn) {
-            error_log("TurmaDAO - Falha na conexão ao buscar turmas para professor.");
-            $_SESSION['listar_turmas_error'] = "Erro ao conectar ao banco de dados para listar turmas.";
-            return false;
-        }
+        if (!$this->conn) return false;
 
-        // QUERY CORRIGIDA: Agora faz o JOIN com 'disciplina' e filtra por 'd.siape_prof'.
         $SQL = "SELECT t.id_turma, t.curso, t.serie, d.nome_disciplina
                 FROM turma t
                 JOIN disciplina d ON t.id_disciplina = d.id_disciplina
                 WHERE d.siape_prof = ?";
-        $stmt = $conn->prepare($SQL);
+        $stmt = $this->conn->prepare($SQL);
+        if (!$stmt) return false;
 
-        if (!$stmt) {
-            error_log("TurmaDAO - Erro ao preparar busca de turmas por professor: " . $conn->error);
-            $_SESSION['listar_turmas_error'] = "Erro interno ao preparar a busca de turmas.";
-            $conexao->close();
-            return false;
-        }
-
-        $stmt->bind_param("s", $siape_prof); // Binda o SIAPE do professor como string.
+        $stmt->bind_param("s", $siape_prof);
         $stmt->execute();
         $result = $stmt->get_result();
 
         $turmas = [];
         while ($row = $result->fetch_assoc()) {
-            $turmas[] = $row; // Adiciona cada linha (turma) ao array.
+            $turmas[] = $row;
         }
 
         $stmt->close();
-        $conexao->close();
-        return $turmas; // Retorna o array de turmas (pode estar vazio).
+        return $turmas;
+    }
+
+    /**
+     * Busca os dados completos de uma turma pelo seu ID.
+     * @param int $id_turma O ID da turma a ser buscada.
+     * @return array|false Retorna os dados da turma ou false se não for encontrada.
+     */
+    public function buscarTurmaCompletaPorId($id_turma) {
+        $sql = "SELECT t.id_turma, t.curso, t.serie, t.id_disciplina, d.nome_disciplina, d.siape_prof, p.nome as nome_professor
+                FROM turma t
+                JOIN disciplina d ON t.id_disciplina = d.id_disciplina
+                LEFT JOIN professor p ON d.siape_prof = p.siape_prof
+                WHERE t.id_turma = ?";
+        
+        if (!$this->conn) return false;
+
+        $stmt = $this->conn->prepare($sql);
+        if (!$stmt) return false;
+
+        $stmt->bind_param("i", $id_turma);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        $turma = $resultado->fetch_assoc();
+        $stmt->close();
+        return $turma;
+    }
+    
+    /**
+     * Busca todas as disciplinas e professores para um ID de turma específico.
+     * @param int $id_turma O ID da turma.
+     * @return array Retorna um array de resultados.
+     */
+    public function buscarDisciplinasEProfessoresPorTurmaId($id_turma) {
+        $detalhes = [];
+        $sql = "SELECT t.curso, t.serie, d.nome_disciplina, p.nome as nome_professor, p.siape_prof
+                FROM turma t
+                JOIN disciplina d ON t.id_disciplina = d.id_disciplina
+                LEFT JOIN professor p ON d.siape_prof = p.siape_prof
+                WHERE t.id_turma = ?
+                ORDER BY d.nome_disciplina ASC";
+
+        if (!$this->conn) return [];
+        
+        $stmt = $this->conn->prepare($sql);
+        if (!$stmt) return [];
+
+        $stmt->bind_param("i", $id_turma);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        while ($linha = $resultado->fetch_assoc()) {
+            $detalhes[] = $linha;
+        }
+        $stmt->close();
+        return $detalhes;
+    }
+
+    /**
+     * Destrutor para fechar a conexão.
+     */
+    public function __destruct() {
+        if ($this->conn) {
+            $this->conn->close();
+        }
     }
 }
 ?>

@@ -7,13 +7,10 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Inclui o serviço de Turma para listar as turmas.
-// O caminho '__DIR__ . '/../../negocio/TurmaServico.php'' está correto
-// assumindo que 'turmas.php' está em 'telas/auth/' e 'TurmaServico.php' em 'negocio/'.
 require_once __DIR__ . '/../../negocio/TurmaServico.php';
 
 // --- PROTEÇÃO DE ROTA ---
 // Verifica se o usuário está logado E se o tipo de usuário é 'professor'.
-// Apenas professores têm permissão para acessar esta página.
 if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'professor') {
     $_SESSION['login_error'] = "Acesso negado. Faça login como professor para ver suas turmas.";
     header("Location: login.php"); // Redireciona para a página de login.
@@ -122,19 +119,6 @@ try {
         .back-link:hover {
             background-color: #268074;
         }
-        .add-turma-button { /* Novo estilo para o botão "Cadastrar Nova Turma" */
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #386641;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        .add-turma-button:hover {
-            background-color: #4d774e;
-        }
     </style>
 </head>
 <body>
@@ -173,7 +157,6 @@ try {
         <p>Nenhuma turma encontrada.</p>
     <?php endif; ?>
 
-    <a href="cadastrar_turma.php" class="add-turma-button">Cadastrar Nova Turma</a>
     <a href="principal.php" class="back-link">← Voltar ao Dashboard</a>
 </div>
 

@@ -52,20 +52,23 @@ class TurmaServico {
         $turmaDAO->set("id_disciplina", (int)$this->id_disciplina); // Converte para INT
 
         // Chama o método 'cadastrar' do TurmaDAO para salvar a turma no banco.
-        // Não é necessário passar siape_prof aqui.
         return $turmaDAO->cadastrar();
     }
 
     /**
      * Busca a lista de disciplinas para popular o dropdown no formulário de turma.
      * Reutiliza o DisciplinaServico para isso.
-     * @param string $siape_prof O SIAPE do professor logado.
+     * @param string|null $siape_prof O SIAPE do professor logado (ou null para admin).
      * @return array Um array de disciplinas.
      */
     public function listarDisciplinasParaSelecao($siape_prof) {
         $disciplinaServico = new DisciplinaServico();
-        // CORREÇÃO AQUI: Chamar o método listarDisciplinasPorProfessor do DisciplinaServico
-        return $disciplinaServico->listarDisciplinasPorProfessor($siape_prof);
+        if ($siape_prof) {
+            return $disciplinaServico->listarDisciplinasPorProfessor($siape_prof);
+        } else {
+            // Se nenhum siape é fornecido, lista todas as disciplinas (para o admin)
+            return $disciplinaServico->listarDisciplinas();
+        }
     }
 
     /**
@@ -81,5 +84,25 @@ class TurmaServico {
         
         // Garante que sempre retornemos um array, mesmo que o DAO retorne false.
         return $turmas !== false ? $turmas : [];
+    }
+    
+    /**
+     * Busca os dados completos de uma turma para a tela de atribuição de professor.
+     * @param int $id_turma O ID da turma a ser buscada.
+     * @return array|false Retorna os dados da turma ou false se não for encontrada.
+     */
+    public function buscarTurmaParaEdicao($id_turma) {
+        $turmaDAO = new TurmaDAO();
+        return $turmaDAO->buscarTurmaCompletaPorId($id_turma);
+    }
+
+    /**
+     * Lista todas as disciplinas e seus respectivos professores para um ID de turma.
+     * @param int $id_turma O ID da turma.
+     * @return array Retorna uma lista de disciplinas e professores.
+     */
+    public function listarProfessoresDaTurma($id_turma) {
+        $turmaDAO = new TurmaDAO();
+        return $turmaDAO->buscarDisciplinasEProfessoresPorTurmaId($id_turma);
     }
 }

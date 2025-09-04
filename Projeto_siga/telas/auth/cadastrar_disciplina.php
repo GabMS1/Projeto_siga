@@ -6,35 +6,45 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../../negocio/DisciplinaServico.php';
+require_once __DIR__ . '/../../negocio/ProfessorServico.php';
 
-if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'professor') {
-    $_SESSION['login_error'] = "Acesso negado. Faça login como professor para cadastrar disciplinas.";
+// Proteção de Rota: Apenas administradores podem cadastrar disciplinas.
+if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin') {
+    $_SESSION['login_error'] = "Acesso negado. Faça login como administrador para cadastrar disciplinas.";
     header("Location: login.php");
     exit();
 }
 
-$siape_professor_logado = $_SESSION['usuario_logado'];
+$professorServico = new ProfessorServico();
+$professores = $professorServico->listarProfessores();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nome_disciplina = $_POST['nome_disciplina'] ?? '';
     $carga_horaria_input = $_POST['carga_horaria'] ?? '';
+    $aulas_semanais_input = $_POST['aulas_semanais'] ?? '';
+    $siape_prof = $_POST['siape_prof'] ?? null; // Pode ser nulo
 
     $disciplinaServico = new DisciplinaServico();
 
-    if (empty($nome_disciplina) || empty($carga_horaria_input)) {
+    if (empty($nome_disciplina) || empty($carga_horaria_input) || empty($aulas_semanais_input)) {
         $_SESSION['cadastro_disciplina_error'] = "Todos os campos são obrigatórios.";
     } 
     elseif (!is_numeric($carga_horaria_input) || (int)$carga_horaria_input <= 0) {
         $_SESSION['cadastro_disciplina_error'] = "A carga horária deve ser um número inteiro positivo.";
-    } 
+    }
+    elseif (!is_numeric($aulas_semanais_input) || (int)$aulas_semanais_input <= 0) {
+        $_SESSION['cadastro_disciplina_error'] = "O número de aulas semanais deve ser um inteiro positivo.";
+    }
     else {
+        // Lembre-se de atualizar o DisciplinaServico e DisciplinaDAO para incluir 'aulas_semanais' no cadastro.
         $disciplinaServico->set("nome_disciplina", $nome_disciplina);
-        $disciplinaServico->set("ch", (int)$carga_horaria_input); // Envia como inteiro
-        $disciplinaServico->set("siape_prof", $siape_professor_logado); 
+        $disciplinaServico->set("ch", (int)$carga_horaria_input);
+        // O siape_prof pode ser uma string vazia, que deve ser tratada como NULL no banco.
+        $disciplinaServico->set("siape_prof", !empty($siape_prof) ? $siape_prof : null);
 
         if ($disciplinaServico->cadastrar()) {
-            $_SESSION['cadastro_disciplina_success'] = "Disciplina '" . htmlspecialchars($nome_disciplina) . "' cadastrada com sucesso!";
-            header("Location: minhas_disciplinas.php"); 
+            $_SESSION['op_success'] = "Disciplina '" . htmlspecialchars($nome_disciplina) . "' cadastrada com sucesso!";
+            header("Location: disciplinas.php"); 
             exit();
         } else {
             if (!isset($_SESSION['cadastro_disciplina_error'])) {
@@ -51,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Cadastrar Nova Disciplina</title>
+    <title>Admin: Cadastrar Nova Disciplina</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -88,8 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-weight: bold;
         }
         input[type="text"],
-        input[type="number"] {
-            width: calc(100% - 22px);
+        input[type="number"],
+        select {
+            width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -142,12 +153,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <h1>Cadastrar Nova Disciplina</h1>
 
     <?php
-    if (isset($_SESSION['cadastro_disciplina_success'])) {
-        echo '<p class="success-message">' . $_SESSION['cadastro_disciplina_success'] . '</p>';
-        unset($_SESSION['cadastro_disciplina_success']);
-    }
     if (isset($_SESSION['cadastro_disciplina_error'])) {
-        echo '<p class="error-message">' . $_SESSION['cadastro_disciplina_error'] . '</p>';
+        echo '<p class="error-message">' . htmlspecialchars($_SESSION['cadastro_disciplina_error']) . '</p>';
         unset($_SESSION['cadastro_disciplina_error']);
     }
     ?>
@@ -162,11 +169,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <label for="carga_horaria">Carga Horária (horas):</label>
             <input type="number" id="carga_horaria" name="carga_horaria" min="1" required>
         </div>
+        
+        <div class="form-group">
+            <label for="aulas_semanais">Aulas por Semana:</label>
+            <input type="number" id="aulas_semanais" name="aulas_semanais" min="1" required>
+        </div>
+
+        <div class="form-group">
+            <label for="siape_prof">Atribuir ao Professor (Opcional):</label>
+            <select id="siape_prof" name="siape_prof">
+                <option value="">Nenhum professor</option>
+                <?php foreach ($professores as $professor): ?>
+                    <option value="<?php echo htmlspecialchars($professor['siape_prof']); ?>">
+                        <?php echo htmlspecialchars($professor['nome']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
 
         <button type="submit" class="submit-button">Cadastrar Disciplina</button>
     </form>
 
-    <a href="minhas_disciplinas.php" class="back-link">← Voltar às Minhas Disciplinas</a>
+    <a href="disciplinas.php" class="back-link">← Voltar para Disciplinas</a>
 </div>
 
 </body>

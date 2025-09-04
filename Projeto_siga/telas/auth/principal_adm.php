@@ -19,6 +19,7 @@ $cargo_adm = $_SESSION['cargo_usuario_logado'] ?? 'Administrador';
 $totalProfessores = 0;
 $totalAdministradores = 0;
 $totalDisciplinas = 0;
+$totalTurmas = 0; // Variável adicionada
 $reposicoesPendentes = 0;
 
 $conexao = new Conexao();
@@ -37,6 +38,10 @@ if ($conn) {
     $stmtDisc = $conn->prepare("SELECT COUNT(*) AS total FROM disciplina");
     if($stmtDisc) { $stmtDisc->execute(); $resDisc = $stmtDisc->get_result(); if($row = $resDisc->fetch_assoc()) { $totalDisciplinas = $row['total']; } $stmtDisc->close(); }
     
+    // Contar total de turmas.
+    $stmtTurmas = $conn->prepare("SELECT COUNT(*) AS total FROM turma");
+    if($stmtTurmas) { $stmtTurmas->execute(); $resTurmas = $stmtTurmas->get_result(); if($row = $resTurmas->fetch_assoc()) { $totalTurmas = $row['total']; } $stmtTurmas->close(); }
+
     // Contar reposições pendentes (sem relatório associado).
     $stmtPend = $conn->prepare("SELECT COUNT(*) AS total FROM programada p LEFT JOIN relatorio r ON p.id_progra = r.id_progra WHERE r.id_progra IS NULL");
     if($stmtPend) { $stmtPend->execute(); $resPend = $stmtPend->get_result(); if($row = $resPend->fetch_assoc()) { $reposicoesPendentes = $row['total']; } $stmtPend->close(); }
@@ -240,6 +245,12 @@ if ($conn) {
             <h3>Disciplinas</h3>
             <p><?php echo $totalDisciplinas; ?></p>
             <a href="disciplinas.php" class="btn-view">Gerenciar</a>
+        </div>
+        <div class="card">
+            <i class="fas fa-school"></i>
+            <h3>Turmas</h3>
+            <p><?php echo $totalTurmas; ?></p>
+            <a href="gerenciar_turmas.php" class="btn-view">Gerenciar</a>
         </div>
         <div class="card">
             <i class="fas fa-calendar-alt"></i>
