@@ -87,12 +87,11 @@ $turmas = $turmaServico->listarTodasAsTurmas();
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         th { background-color: #f8f9fa; color: #555; font-weight: 600; text-transform: uppercase; font-size: 0.9em; }
-        tr:hover { background-color: #f8f9fa; }
+        tr:not(.actions-row):hover { background-color: #f8f9fa; }
         
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 10px; font-weight: 500; border: 1px solid transparent; }
         .alert-success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
 
-        .actions-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
         .btn-action {
             padding: 8px 15px;
             border-radius: 50px;
@@ -110,6 +109,7 @@ $turmas = $turmaServico->listarTodasAsTurmas();
         .btn-action:hover { opacity: 0.8; transform: translateY(-2px); }
         .btn-edit { background-color: var(--info-color); }
         .btn-view { background-color: var(--secondary-color); }
+        .actions-row td { padding-top: 15px; border-bottom: 2px solid var(--primary-color); }
     </style>
 </head>
 <body>
@@ -146,7 +146,7 @@ $turmas = $turmaServico->listarTodasAsTurmas();
                     <th>Curso</th>
                     <th>Disciplina</th>
                     <th>Professor</th>
-                    <th>Ações</th>
+                    <th>Ação</th>
                 </tr>
             </thead>
             <tbody>
@@ -165,14 +165,21 @@ $turmas = $turmaServico->listarTodasAsTurmas();
                                 <?php if ($first): ?>
                                     <td rowspan="<?= $rowCount ?>"><strong><?= htmlspecialchars($id_turma) ?></strong></td>
                                     <td rowspan="<?= $rowCount ?>"><?= htmlspecialchars($disciplina_info['curso']) . ' - ' . htmlspecialchars($disciplina_info['serie']) . 'º Ano' ?></td>
-                                <?php $first = false; endif; ?>
+                                <?php endif; ?>
                                 <td><?= htmlspecialchars($disciplina_info['nome_disciplina']) ?></td>
                                 <td><?= htmlspecialchars($disciplina_info['nome_professor'] ?? '<em>Não atribuído</em>') ?></td>
-                                <td class="actions-cell">
-                                    <a href="atribuir_professor_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>&id_disciplina=<?= $disciplina_info['id_disciplina'] ?>" class="btn-action btn-edit"><i class="fas fa-user-edit"></i> Atribuir</a>
+                                <td>
+                                    <?php if ($first): ?>
+                                        <a href="atribuir_professor_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>&id_disciplina=<?= $disciplina_info['id_disciplina'] ?>" class="btn-action btn-edit"><i class="fas fa-user-edit"></i> Atribuir</a>
+                                    <?php $first = false; endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <tr class="actions-row">
+                            <td colspan="5" style="text-align: right;">
+                                <a href="ver_professores_turma.php?id_turma=<?= htmlspecialchars($id_turma) ?>" class="btn-action btn-view"><i class="fas fa-eye"></i> Ver Professores</a>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>

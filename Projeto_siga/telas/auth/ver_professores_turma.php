@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Proteção de Rota
 if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin') {
     header("Location: login.php");
     exit();
@@ -35,19 +34,54 @@ if (isset($_GET['id_turma'])) {
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Professores da Turma</title>
+    <title>Professores da Turma - SIGA</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary-color: #386641; --secondary-color: #2a9d8f; --text-color: #264653; --bg-light: #f8f9fa; }
-        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg-light); }
-        .container { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
-        h1 { color: var(--text-color); margin-bottom: 5px; }
-        .turma-subtitulo { font-size: 1.2em; color: #555; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        :root {
+            --primary-color: #386641;
+            --secondary-color: #6A994E;
+            --background-light: #FBFBFB;
+            --text-color: #333;
+            --white: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --border-color: #E0E0E0;
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background-color: var(--background-light); padding-top: 40px; }
+        .container { 
+            background-color: white; 
+            padding: 40px; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px var(--shadow-color); 
+            max-width: 800px; 
+            width: 100%; 
+        }
+        h1 { color: var(--text-color); margin-bottom: 5px; text-align: center; }
+        .turma-subtitulo { 
+            font-size: 1.2em; 
+            color: #555; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 15px;
+            text-align: center;
+        }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; }
-        .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; background-color: #f8d7da; color: #721c24; }
+        th, td { padding: 15px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        th { background-color: #f8f9fa; font-weight: 600; }
+        .btn-back { 
+            background-color: #6c757d; 
+            color: white; 
+            padding: 10px 25px; 
+            text-decoration: none; 
+            border-radius: 50px; 
+            display: inline-block; 
+            margin-top: 30px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        .btn-back:hover { background-color: #5a6268; }
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 10px; background-color: #f8d7da; color: #721c24; text-align: center; }
+        .footer-actions { text-align: center; }
     </style>
 </head>
 <body>
@@ -71,7 +105,7 @@ if (isset($_GET['id_turma'])) {
                 <?php foreach ($turma_detalhes as $detalhe): ?>
                     <tr>
                         <td><?= htmlspecialchars($detalhe['nome_disciplina']) ?></td>
-                        <td><?= htmlspecialchars($detalhe['nome_professor'] ?? 'Não atribuído') ?></td>
+                        <td><?= htmlspecialchars($detalhe['nome_professor'] ?? '<em>Não atribuído</em>') ?></td>
                         <td><?= htmlspecialchars($detalhe['siape_prof'] ?? 'N/A') ?></td>
                     </tr>
                 <?php endforeach; ?>
@@ -81,7 +115,9 @@ if (isset($_GET['id_turma'])) {
         <div class="alert"><?= htmlspecialchars($mensagem) ?></div>
     <?php endif; ?>
 
-    <a href="gerenciar_turmas.php" class="btn-secondary">Voltar</a>
+    <div class="footer-actions">
+        <a href="gerenciar_turmas.php" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</a>
+    </div>
 </div>
 </body>
 </html>
