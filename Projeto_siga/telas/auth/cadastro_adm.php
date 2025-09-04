@@ -1,180 +1,267 @@
 <?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\cadastro_adm.php
 
-// ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
-ini_set('display_errors', 1); // Ativa a exibição de erros (bom para desenvolvimento)
-ini_set('display_startup_errors', 1); // Ativa a exibição de erros durante a inicialização
-error_reporting(E_ALL); // Reporta todos os tipos de erros
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(); // Inicia a sessão PHP se ainda não estiver iniciada.
+    session_start();
 };
 
-// Inclui a classe de serviço para Administradores.
 require_once __DIR__ . '/../../negocio/AdministradorServico.php';
 
-// Verifica se o método da requisição HTTP é POST (o formulário foi submetido).
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Obtém os dados enviados pelo formulário, usando o operador null coalescing (??) para evitar avisos.
-    $siape = $_POST['siape'] ?? '';              // SIAPE do administrador.
-    $senha = $_POST['senha'] ?? '';              // Senha em texto puro.
-    $confirmar_senha = $_POST['confirmar_senha'] ?? ''; // Confirmação da senha.
-    $nome = $_POST['nome'] ?? '';                // Nome completo do administrador.
-    $cargo = $_POST['cargo'] ?? '';              // Cargo do administrador.
+    $siape = $_POST['siape'] ?? '';
+    $senha = $_POST['senha'] ?? '';
+    $confirmar_senha = $_POST['confirmar_senha'] ?? '';
+    $nome = $_POST['nome'] ?? '';
+    $cargo = $_POST['cargo'] ?? '';
 
     try {
-        // --- Validações de Entrada ---
-
-        // 1. Verifica se todos os campos obrigatórios estão preenchidos.
         if (empty($siape) || empty($senha) || empty($confirmar_senha) || empty($nome) || empty($cargo)) {
             throw new Exception("Todos os campos são obrigatórios.");
         }
-
-        // 2. Verifica se o SIAPE contém apenas números.
         if (!is_numeric($siape)) {
             throw new Exception("O SIAPE deve conter apenas números.");
         }
-
-        // 3. Verifica se a senha e a confirmação de senha são idênticas.
         if ($senha !== $confirmar_senha) {
             throw new Exception("As senhas não coincidem.");
         }
-
-        // 4. Verifica se a senha tem o comprimento mínimo exigido.
         if (strlen($senha) < 8) {
             throw new Exception("A senha deve ter no mínimo 8 caracteres.");
         }
 
-        // --- Processamento do Cadastro ---
-
-        // Cria uma nova instância da classe AdministradorServico para lidar com a lógica de cadastro.
         $administradorServico = new AdministradorServico();
-        
-        // Chama o método 'criarAdministrador' do serviço, passando todos os dados necessários.
-        // A senha será hashed dentro do método criarAdministrador no serviço.
         $resultado = $administradorServico->criarAdministrador($siape, $senha, $nome, $cargo);
 
-        // Verifica o resultado do cadastro.
         if ($resultado) {
-            $_SESSION['cadastro_success'] = "Administrador cadastrado com sucesso!"; // Mensagem de sucesso.
-            header("Location: login.php"); // Redireciona para a página de login após o sucesso.
-            exit; // Termina a execução do script.
+            $_SESSION['cadastro_success'] = "Administrador cadastrado com sucesso!";
+            header("Location: login.php");
+            exit;
         } else {
-             // Se o cadastro falhar e nenhuma mensagem de erro específica já foi definida pelo DAO
-             // (ex: SIAPE duplicado), define uma mensagem genérica de erro.
              if (!isset($_SESSION['cadastro_error'])) {
                  throw new Exception("Erro ao cadastrar administrador. Tente novamente.");
              }
         }
     } catch (Exception $e) {
-        // Captura qualquer exceção (erro) lançada durante o processo de validação ou cadastro.
-        $_SESSION['cadastro_error'] = $e->getMessage(); // Armazena a mensagem de erro na sessão.
-        header("Location: cadastro_adm.php"); // Redireciona de volta para a página de cadastro com o erro.
-        exit; // Termina a execução do script.
+        $_SESSION['cadastro_error'] = $e->getMessage();
+        header("Location: cadastro_adm.php");
+        exit;
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Administrador - SUAP IF Goiano</title>
+    <title>Cadastro de Administrador - SIGA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos CSS (mantidos conforme seu arquivo original) */
+        :root {
+            --primary-color: #386641;
+            --secondary-color: #6A994E;
+            --accent-color: #A7C957;
+            --background-light: #F2E8CF;
+            --text-color: #333;
+            --white: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
         body {
-            font-family: sans-serif;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
-            background-color: #386641;
+            background-color: var(--background-light);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            color: var(--text-color);
         }
+
         .container {
-            background-color: #f0f7f4;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            background-color: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow-color);
             display: flex;
-            width: 80%;
-            max-width: 960px;
+            width: 90%;
+            max-width: 1000px;
             overflow: hidden;
         }
+
         .left-side {
-            background-color: #386641;
-            color: #f0f7f4;
-            padding: 40px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             flex: 1;
+            text-align: center;
         }
-        .right-side {
-            padding: 40px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .form-group {
+
+        .logo img {
+            max-width: 120px;
             margin-bottom: 20px;
         }
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+
+        .left-side h1 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            font-weight: 700;
         }
-        .login-button {
-            background-color: #2a9d8f;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+
+        .left-side p {
+            font-size: 1em;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .right-side {
+            padding: 50px;
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-title {
+            color: var(--primary-color);
+            font-size: 2.2em;
+            margin-bottom: 30px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
             width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #fff;
+        }
+        
+        select {
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E');
+            background-repeat: no-repeat;
+            background-position: right 15px top 50%;
+            background-size: .65em auto;
+            padding-right: 30px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(106, 153, 78, 0.2);
+        }
+
+        .submit-button {
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            color: var(--white);
+            padding: 14px 15px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .login-link {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 0.95em;
+        }
+
+        .login-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .message-box {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid transparent;
         }
         .error-message {
-            color: red;
-            text-align: center;
-            margin-bottom: 15px;
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="left-side">
-            <img src="logos ifgoiano.png" alt="IF Goiano" style="max-width:150px;">
-            <h1>Cadastro de Administradores</h1>
-            <p>Sistema de Gestão Acadêmica</p>
+            <div class="logo">
+                <img src="logos ifgoiano.png" alt="IF Goiano">
+            </div>
+            <h1>Acesso Administrativo</h1>
+            <p>Faça seu cadastro para gerenciar o sistema acadêmico.</p>
         </div>
         
         <div class="right-side">
-            <h2>Cadastrar Administrador</h2>
+            <h2 class="form-title">Cadastro de Administrador</h2>
             
             <?php 
-            // Exibe mensagens de erro de cadastro, se houver.
             if (isset($_SESSION['cadastro_error'])): ?>
-                <div class="error-message"><?= $_SESSION['cadastro_error'] ?></div>
-                <?php unset($_SESSION['cadastro_error']); // Limpa a mensagem após exibir. ?>
+                <div class="message-box error-message"><?= htmlspecialchars($_SESSION['cadastro_error']) ?></div>
+                <?php unset($_SESSION['cadastro_error']); ?>
             <?php endif; ?>
 
-            <form method="POST">
+            <form action="cadastro_adm.php" method="POST">
                 <div class="form-group">
-                    <label>SIAPE*</label>
-                    <input type="text" name="siape" required>
+                    <label for="siape">SIAPE</label>
+                    <input type="text" id="siape" name="siape" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Nome Completo*</label>
-                    <input type="text" name="nome" required>
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" name="nome" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Cargo*</label>
-                    <select name="cargo" required>
+                    <label for="cargo">Cargo</label>
+                    <select id="cargo" name="cargo" required>
                         <option value="">Selecione...</option>
                         <option value="Coordenador">Coordenador</option>
                         <option value="Diretor">Diretor</option>
@@ -183,19 +270,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
                 
                 <div class="form-group">
-                    <label>Senha* (mínimo 8 caracteres)</label>
-                    <input type="password" name="senha" minlength="8" required>
+                    <label for="senha">Senha (mínimo 8 caracteres)</label>
+                    <input type="password" id="senha" name="senha" minlength="8" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Confirmar Senha*</label>
-                    <input type="password" name="confirmar_senha" minlength="8" required>
+                    <label for="confirmar_senha">Confirmar Senha</label>
+                    <input type="password" id="confirmar_senha" name="confirmar_senha" minlength="8" required>
                 </div>
                 
-                <button type="submit" class="login-button">Cadastrar</button>
+                <button type="submit" class="submit-button">Cadastrar</button>
             </form>
             
-            <div style="text-align:center; margin-top:20px;">
+            <div class="login-link">
                 <a href="login.php">Já tem conta? Faça login</a>
             </div>
         </div>

@@ -43,31 +43,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Professor - SIGA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #386641;
+            --secondary-color: #6A994E;
+            --accent-color: #A7C957;
+            --background-light: #F2E8CF;
+            --text-color: #333;
+            --white: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
-            background-color: #386641;
+            background-color: var(--background-light);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            color: var(--text-color);
         }
 
         .container {
-            background-color: #f0f7f4;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow-color);
             display: flex;
-            width: 80%;
-            max-width: 960px;
+            width: 90%;
+            max-width: 1000px;
             overflow: hidden;
         }
 
         .left-side {
-            background-color: #386641;
-            color: #f0f7f4;
-            padding: 40px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -76,93 +88,117 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             text-align: center;
         }
 
-        .left-side .logo img {
-            max-width: 150px;
-            height: auto;
+        .logo img {
+            max-width: 120px;
             margin-bottom: 20px;
         }
 
         .left-side h1 {
             font-size: 2em;
             margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .left-side p {
+            font-size: 1em;
+            line-height: 1.6;
+            opacity: 0.9;
         }
 
         .right-side {
-            padding: 40px;
-            flex: 1;
+            padding: 50px;
+            flex: 1.2;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
         .form-title {
-            color: #386641;
-            font-size: 2em;
-            margin-bottom: 25px;
+            color: var(--primary-color);
+            font-size: 2.2em;
+            margin-bottom: 30px;
+            font-weight: 600;
             text-align: center;
         }
 
         .form-group {
             margin-bottom: 20px;
+            position: relative;
         }
 
         label {
             display: block;
             margin-bottom: 8px;
             color: #555;
-            font-weight: bold;
+            font-weight: 500;
+            font-size: 0.9em;
         }
 
         input[type="text"],
         input[type="password"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px 15px;
             border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+            border-radius: 25px;
+            font-size: 1em;
             box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(106, 153, 78, 0.2);
         }
 
         .submit-button {
-            background-color: #2a9d8f;
-            color: #fff;
-            padding: 12px 15px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            color: var(--white);
+            padding: 14px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 25px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1.1em;
+            font-weight: 600;
             width: 100%;
-            transition: background-color 0.3s ease;
-            margin-bottom: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
         }
 
         .submit-button:hover {
-            background-color: #268074;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         }
-        
+
         .login-link {
+            margin-top: 25px;
             text-align: center;
-            font-size: 0.9em;
+            font-size: 0.95em;
         }
 
         .login-link a {
-            color: #2a9d8f;
+            color: var(--primary-color);
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .login-link a:hover {
             text-decoration: underline;
         }
 
-        .error-message {
+        .message-box {
             text-align: center;
-            margin-bottom: 15px;
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid transparent;
+        }
+        .error-message {
             color: #721c24;
             background-color: #f8d7da;
+            border-color: #f5c6cb;
         }
     </style>
 </head>
@@ -181,24 +217,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             <?php
             if (isset($_SESSION['cadastro_error'])) {
-                echo '<p class="error-message">' . htmlspecialchars($_SESSION['cadastro_error']) . '</p>';
+                echo '<p class="message-box error-message">' . htmlspecialchars($_SESSION['cadastro_error']) . '</p>';
                 unset($_SESSION['cadastro_error']);
             }
             ?>
 
             <form action="cadastro.php" method="POST">
                 <div class="form-group">
-                    <label for="siape_prof">SIAPE:</label>
+                    <label for="siape_prof">SIAPE</label>
                     <input type="text" id="siape_prof" name="siape_prof" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="nome">Nome Completo:</label>
+                    <label for="nome">Nome Completo</label>
                     <input type="text" id="nome" name="nome" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="senha">Senha:</label>
+                    <label for="senha">Senha</label>
                     <input type="password" id="senha" name="senha" required>
                 </div>
 

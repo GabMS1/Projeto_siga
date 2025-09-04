@@ -1,36 +1,29 @@
 <?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\administradores.php
 
-// ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO, SEM ESPAÇOS OU LINHAS ACIMA.
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(); // Inicia a sessão PHP se ainda não estiver iniciada.
+    session_start();
 }
 
-// Inclui o serviço de Administrador para listar os administradores.
 require_once __DIR__ . '/../../negocio/AdministradorServico.php';
 
-// --- PROTEÇÃO DE ROTA ---
-// Verifica se o usuário está logado E se o tipo de usuário é 'admin'.
-// Apenas administradores têm permissão para acessar esta página.
 if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin') {
     $_SESSION['login_error'] = "Acesso negado. Faça login como administrador para ver os administradores.";
-    header("Location: login.php"); // Redireciona para a página de login.
-    exit(); // Encerra o script.
+    header("Location: login.php");
+    exit();
 }
 
-$administradores = []; // Inicializa um array vazio para armazenar os administradores.
-$mensagem = ""; // Para mensagens de feedback.
+$administradores = [];
+$mensagem = "";
 
 try {
     $administradorServico = new AdministradorServico();
-    // Tenta listar todos os administradores.
     $administradores = $administradorServico->listarAdministradores();
 
     if (empty($administradores)) {
         $mensagem = "Nenhum administrador cadastrado no sistema.";
     }
 } catch (Exception $e) {
-    // Captura qualquer exceção que possa ocorrer.
     $mensagem = "Erro ao carregar os administradores: " . $e->getMessage();
     error_log("Erro em administradores.php: " . $e->getMessage());
 }
@@ -41,109 +34,117 @@ try {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Gerenciar Administradores</title>
+    <title>Gerenciar Administradores - SIGA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            background-color: #f4f7f8;
+        :root {
+            --primary-color: #386641;
+            --secondary-color: #6A994E;
+            --accent-color: #A7C957;
+            --background-light: #FBFBFB;
+            --text-color: #333;
+            --white: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --border-color: #E0E0E0;
+        }
+        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; background-color: var(--background-light); }
+        .sidebar {
+            width: 260px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            position: fixed;
+            height: 100%;
+            box-shadow: 2px 0 10px var(--shadow-color);
             display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Alinha ao topo para permitir scroll */
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
+            flex-direction: column;
+            padding-top: 20px;
         }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            box-sizing: border-box;
-            text-align: center;
+        .sidebar-header { padding: 0 25px; text-align: center; margin-bottom: 30px; }
+        .sidebar-header h2 { font-size: 1.8em; font-weight: 700; margin: 0; color: var(--white); }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .sidebar a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
         }
-        h1 {
-            color: #386641;
-            margin-bottom: 25px;
-            font-size: 2.2em;
+        .sidebar a i { margin-right: 15px; font-size: 1.2em; width: 20px; text-align: center; }
+        .sidebar a:hover { background-color: rgba(255, 255, 255, 0.1); border-left-color: var(--accent-color); }
+        .sidebar a.active { background-color: var(--secondary-color); border-left-color: var(--accent-color); font-weight: 600; }
+        
+        .main-content { margin-left: 260px; padding: 30px; flex: 1; width: calc(100% - 260px); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { color: var(--text-color); font-size: 2em; font-weight: 600; margin: 0; }
+        .btn-add {
+            padding: 10px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
+        .btn-add:hover { background-color: var(--secondary-color); transform: translateY(-2px); }
+
+        .table-container { background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px var(--shadow-color); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #f8f9fa; color: #555; font-weight: 600; text-transform: uppercase; font-size: 0.9em; }
+        tr:hover { background-color: #f8f9fa; }
+
         .message {
             margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            font-weight: bold;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
         }
-        .error-message {
-            color: red;
-            background-color: #ffe0e0;
-            border: 1px solid red;
-        }
-        .success-message {
-            color: green;
-            background-color: #e0ffe0;
-            border: 1px solid green;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #386641;
-            color: white;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 10px 20px;
-            background-color: #2a9d8f;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color: 0.3s ease;
-        }
-        .back-link:hover {
-            background-color: #268074;
-        }
-        .add-admin-button { /* Novo estilo para o botão "Cadastrar Novo Administrador" */
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #386641;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        .add-admin-button:hover {
-            background-color: #4d774e;
+        .info-message {
+            background-color: #e0f7fa;
+            color: #00796b;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Gerenciar Administradores</h1>
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>SIGA</h2>
+    </div>
+    <ul>
+        <li><a href="principal_adm.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li><a href="professores.php"><i class="fas fa-chalkboard-teacher"></i> <span>Professores</span></a></li>
+        <li><a href="administradores.php" class="active"><i class="fas fa-user-shield"></i> <span>Admins</span></a></li>
+        <li><a href="disciplinas.php"><i class="fas fa-book"></i> <span>Disciplinas</span></a></li>
+        <li><a href="gerenciar_turmas.php"><i class="fas fa-users"></i> <span>Turmas</span></a></li>
+        <li><a href="gerenciar_ausencias.php"><i class="fas fa-calendar-check"></i> <span>Ausências</span></a></li>
+        <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Sair</span></a></li>
+    </ul>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Gerenciar Administradores</h1>
+        <a href="cadastro_adm.php" class="btn-add"><i class="fas fa-plus"></i> Novo Admin</a>
+    </div>
 
     <?php if (!empty($mensagem)): ?>
-        <p class="message <?php echo strpos($mensagem, 'Erro') !== false ? 'error-message' : 'success-message'; ?>">
+        <div class="message info-message">
             <?php echo htmlspecialchars($mensagem); ?>
-        </p>
+        </div>
     <?php endif; ?>
 
-    <?php if (!empty($administradores)): ?>
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
@@ -154,22 +155,23 @@ try {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($administradores as $admin): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($admin['id_adm']); ?></td>
-                    <td><?php echo htmlspecialchars($admin['siape_login']); ?></td>
-                    <td><?php echo htmlspecialchars($admin['nome']); ?></td>
-                    <td><?php echo htmlspecialchars($admin['cargo']); ?></td>
-                </tr>
-                <?php endforeach; ?>
+                <?php if (!empty($administradores)): ?>
+                    <?php foreach ($administradores as $admin): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($admin['id_adm']); ?></td>
+                        <td><?php echo htmlspecialchars($admin['siape_login']); ?></td>
+                        <td><?php echo htmlspecialchars($admin['nome']); ?></td>
+                        <td><?php echo htmlspecialchars($admin['cargo']); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding: 20px;">Nenhum administrador encontrado.</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
-    <?php else: ?>
-        <p>Nenhum administrador encontrado.</p>
-    <?php endif; ?>
-
-    <a href="cadastro_adm.php" class="add-admin-button">Cadastrar Novo Administrador</a>
-    <a href="principal_adm.php" class="back-link">← Voltar ao Dashboard Admin</a>
+    </div>
 </div>
 
 </body>
