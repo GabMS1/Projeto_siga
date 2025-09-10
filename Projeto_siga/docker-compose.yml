@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./Projeto_siga:/var/www/html
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+  db:
+    image: mysql:8.0
+    restart: always
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./projeto_siga.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: projeto_siga
+      MYSQL_USER: user_siga
+      MYSQL_PASSWORD: siga_password
+    ports:
+      - "3306:3306"
+
+volumes:
+  db_data:

@@ -2,13 +2,10 @@
 // C:\xampp\htdocs\Projeto_siga\DAO\Conexao.php
 
 class Conexao {
-    // Propriedades privadas para as credenciais do banco de dados.
-    private $host = 'localhost'; // Host do banco de dados (geralmente 'localhost'). Removi ':3306' se não for estritamente necessário para MySQLi local.
-    private $user = 'root';      // Usuário do banco de dados.
-    private $pass = '';          // Senha do banco de dados.
-    private $db = 'projeto_siga'; // Nome do banco de dados.
-    private $mysqli_con;         // Objeto de conexão MySQLi.
-
+private $host = 'db'; // O nome do serviço do banco de dados no Docker Compose
+private $user = 'user_siga'; // Altere para o usuário definido no docker-compose.yml
+private $pass = 'siga_password'; // Altere para a senha definida no docker-compose.yml
+private $db = 'projeto_siga';
     /**
      * Construtor da classe Conexao.
      * No MySQLi, a conexão é geralmente estabelecida no método get_connection() para carregamento "lazy".
