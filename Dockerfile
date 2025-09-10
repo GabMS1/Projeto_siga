@@ -8,7 +8,7 @@ WORKDIR /var/www/html
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 
 # Copia todos os arquivos do projeto para o diretório de trabalho do contêiner
-COPY Projeto_siga .
+COPY Projeto_siga/ .
 
 # Define o arquivo de entrada para a aplicação
 CMD ["apache2-foreground"]

@@ -11,14 +11,14 @@ services:
     depends_on:
       - db
     env_file:
-      - .env
+      - ./.env
 
   db:
     image: mysql:8.0
     restart: always
     volumes:
       - db_data:/var/lib/mysql
-      - ./projeto_siga.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./Projeto_siga/projeto_siga.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: projeto_siga
