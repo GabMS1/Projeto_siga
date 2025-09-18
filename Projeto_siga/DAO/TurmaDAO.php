@@ -6,9 +6,8 @@ require_once __DIR__ . '/Conexao.php';
 class TurmaDAO {
     private $conn;
 
-    public function __construct() {
-        $conexao = new Conexao();
-        $this->conn = $conexao->get_connection();
+    public function __construct($db_connection) {
+        $this->conn = $db_connection;
     }
 
     public function buscarTodas() {
@@ -92,6 +91,9 @@ class TurmaDAO {
         return $num_rows > 0;
     }
 
+    /**
+     * @param string $siape_prof O SIAPE do professor logado.
+     */
     public function buscarTurmasPorProfessor($siape_prof) {
         if (!$this->conn) return false;
 
@@ -163,12 +165,6 @@ class TurmaDAO {
         
         $stmt->close();
         return $detalhes;
-    }
-
-    public function __destruct() {
-        if ($this->conn) {
-            $this->conn->close();
-        }
     }
 }
 ?>

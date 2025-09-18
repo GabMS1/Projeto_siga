@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\negocio\AusenciaServico.php
 
 // Inclui as classes DAO necessárias para interagir com o banco de dados.
@@ -35,24 +35,26 @@ class AusenciaServico {
         $conn->begin_transaction();
 
         try {
-            // 1. Cadastra o professor ausente na tabela 'prof_ausente'
-            $profAusenteDAO = new ProfAusenteDAO();
+            // 1. Instancia os DAOs com a mesma conexão
+            $profAusenteDAO = new ProfAusenteDAO($conn);
+            $profSubsDAO = new ProfSubsDAO($conn);
+            $programadaDAO = new ProgramadaDAO($conn);
+
+            // 2. Cadastra o professor ausente na tabela 'prof_ausente'
             $id_ausente = $profAusenteDAO->cadastrar($dados['assinatura_ausente'], $dados['siape_ausente']);
 
             if (!$id_ausente) {
                 throw new Exception("Erro ao cadastrar professor ausente.");
             }
 
-            // 2. Cadastra o professor substituto na tabela 'prof_subs'
-            $profSubsDAO = new ProfSubsDAO();
+            // 3. Cadastra o professor substituto na tabela 'prof_subs'
             $id_substituto = $profSubsDAO->cadastrar($dados['assinatura_substituto'], $dados['siape_substituto']);
             
             if (!$id_substituto) {
                 throw new Exception("Erro ao cadastrar professor substituto.");
             }
 
-            // 3. Agenda a reposição na tabela 'programada', usando os IDs recém-criados.
-            $programadaDAO = new ProgramadaDAO();
+            // 4. Agenda a reposição na tabela 'programada', usando os IDs recém-criados.
             $sucesso = $programadaDAO->cadastrar(
                 $dados['dia'],
                 $dados['horario'],
@@ -93,14 +95,15 @@ class AusenciaServico {
         $conn->begin_transaction();
 
         try {
-            $profAusenteDAO = new ProfAusenteDAO();
+            $profAusenteDAO = new ProfAusenteDAO($conn);
+            $programadaDAO = new ProgramadaDAO($conn);
+
             $id_ausente = $profAusenteDAO->cadastrar($dados['assinatura_ausente'], $dados['siape_ausente']);
 
             if (!$id_ausente) {
                 throw new Exception("Erro ao cadastrar professor ausente.");
             }
 
-            $programadaDAO = new ProgramadaDAO();
             // id_ass_subs é setado como NULL para indicar uma falta sem reposição
             $sucesso = $programadaDAO->cadastrar(
                 $dados['dia'],
@@ -140,16 +143,18 @@ class AusenciaServico {
         $conn->begin_transaction();
 
         try {
-            // 1. Cadastra o professor substituto na tabela 'prof_subs'
-            $profSubsDAO = new ProfSubsDAO();
+            // 1. Instancia os DAOs com a mesma conexão
+            $profSubsDAO = new ProfSubsDAO($conn);
+            $programadaDAO = new ProgramadaDAO($conn);
+
+            // 2. Cadastra o professor substituto na tabela 'prof_subs'
             $id_substituto = $profSubsDAO->cadastrar($assinatura_substituto, $siape_substituto);
             
             if (!$id_substituto) {
                 throw new Exception("Erro ao cadastrar professor substituto.");
             }
 
-            // 2. Atualiza a falta programada para incluir o ID do substituto
-            $programadaDAO = new ProgramadaDAO();
+            // 3. Atualiza a falta programada para incluir o ID do substituto
             $sucesso = $programadaDAO->atualizarFaltaParaReposicao($id_progra, $id_substituto);
 
             if (!$sucesso) {
@@ -178,8 +183,12 @@ class AusenciaServico {
      * @return array Um array de reposições.
      */
     public function listarReposicoesPorProfessor($siape_prof) {
-        $programadaDAO = new ProgramadaDAO();
-        return $programadaDAO->buscarReposicoesPorProfessor((string)$siape_prof);
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        $programadaDAO = new ProgramadaDAO($conn);
+        $resultado = $programadaDAO->buscarReposicoesPorProfessor((string)$siape_prof);
+        $conexao->close();
+        return $resultado;
     }
     
     /**
@@ -188,8 +197,12 @@ class AusenciaServico {
      * @return array Um array de ausências pendentes.
      */
     public function listarTodasAusenciasPendentes() {
-        $programadaDAO = new ProgramadaDAO();
-        return $programadaDAO->buscarTodasAusenciasPendentes();
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        $programadaDAO = new ProgramadaDAO($conn);
+        $resultado = $programadaDAO->buscarTodasAusenciasPendentes();
+        $conexao->close();
+        return $resultado;
     }
     
     /**
@@ -197,8 +210,12 @@ class AusenciaServico {
      * @return array Um array de reposições.
      */
     public function listarTodasReposicoes() {
-        $programadaDAO = new ProgramadaDAO();
-        return $programadaDAO->listarTodasReposicoes();
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        $programadaDAO = new ProgramadaDAO($conn);
+        $resultado = $programadaDAO->listarTodasReposicoes();
+        $conexao->close();
+        return $resultado;
     }
 }
 ?>

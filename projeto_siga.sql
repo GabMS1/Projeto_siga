@@ -1,7 +1,15 @@
 CREATE DATABASE IF NOT EXISTS projeto_siga;
 
-USE `projeto_siga`;
-DROP TABLE IF EXISTS `relatorio`, `programada`, `prof_subs`, `prof_ausente`, `turma`, `disciplina`, `admin`, `professor`;
+USE projeto_siga;
+
+DROP TABLE IF EXISTS `relatorio`;
+DROP TABLE IF EXISTS `programada`;
+DROP TABLE IF EXISTS `prof_subs`;
+DROP TABLE IF EXISTS `prof_ausente`;
+DROP TABLE IF EXISTS `turma`;
+DROP TABLE IF EXISTS `disciplina`;
+DROP TABLE IF EXISTS `admin`;
+DROP TABLE IF EXISTS `professor`;
 
 -- Tabela de professores
 CREATE TABLE `professor` (
@@ -25,16 +33,18 @@ CREATE TABLE `disciplina` (
     `nome_disciplina` VARCHAR(255) NOT NULL,
     `ch` INT NOT NULL,
     `siape_prof` VARCHAR(20),
-    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`)
+    `aulas_semanais` INT NOT NULL,
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- Tabela de turmas
+-- Tabela de turmas (COM A CORREÇÃO NA CHAVE PRIMÁRIA)
 CREATE TABLE `turma` (
-    `id_turma` INT PRIMARY KEY,
-    `curso` VARCHAR(255) NOT NULL,
-    `serie` ENUM('1º', '2º', '3º', '4º') NOT NULL,
-    `id_disciplina` INT,
-    FOREIGN KEY (`id_disciplina`) REFERENCES `disciplina`(`id_disciplina`)
+    `id_turma` INT NOT NULL,
+    `curso` ENUM('Agropecuária', 'Alimentos', 'Informática') NOT NULL,
+    `serie` ENUM('1', '2', '3') NOT NULL,
+    `id_disciplina` INT NOT NULL,
+    PRIMARY KEY (`id_turma`, `id_disciplina`),
+    FOREIGN KEY (`id_disciplina`) REFERENCES `disciplina`(`id_disciplina`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Tabela para registros de professores ausentes
@@ -42,7 +52,7 @@ CREATE TABLE `prof_ausente` (
     `id_ass_ausente` INT AUTO_INCREMENT PRIMARY KEY,
     `ass_ausente` VARCHAR(255) NOT NULL,
     `siape_prof` VARCHAR(20),
-    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`)
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Tabela para registros de professores substitutos
@@ -50,7 +60,7 @@ CREATE TABLE `prof_subs` (
     `id_ass_subs` INT AUTO_INCREMENT PRIMARY KEY,
     `ass_subs` VARCHAR(255) NOT NULL,
     `siape_prof` VARCHAR(20),
-    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`)
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Tabela para reposições
@@ -63,10 +73,9 @@ CREATE TABLE `programada` (
     `id_disciplina` INT,
     `id_ass_subs` INT,
     `id_ass_ausente` INT,
-    FOREIGN KEY (`id_turma`) REFERENCES `turma`(`id_turma`),
-    FOREIGN KEY (`id_disciplina`) REFERENCES `disciplina`(`id_disciplina`),
-    FOREIGN KEY (`id_ass_subs`) REFERENCES `prof_subs`(`id_ass_subs`),
-    FOREIGN KEY (`id_ass_ausente`) REFERENCES `prof_ausente`(`id_ass_ausente`)
+    FOREIGN KEY (`id_turma`, `id_disciplina`) REFERENCES `turma`(`id_turma`, `id_disciplina`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`id_ass_subs`) REFERENCES `prof_subs`(`id_ass_subs`) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (`id_ass_ausente`) REFERENCES `prof_ausente`(`id_ass_ausente`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Tabela de relatórios
@@ -83,16 +92,7 @@ CREATE TABLE `relatorio` (
 );
 
 -- Adicionando índices para melhor performance
-CREATE INDEX idx_disciplina_professor ON `disciplina`(`siape_prof`);
-CREATE INDEX idx_turma_disciplina ON `turma`(`id_disciplina`);
-CREATE INDEX idx_relatorio_professor ON `relatorio`(`siape_prof`);
-CREATE INDEX idx_prof_ausente_siape ON `prof_ausente`(`siape_prof`);
-CREATE INDEX idx_programada_turma ON `programada`(`id_turma`);
-CREATE INDEX idx_programada_disciplina ON `programada`(`id_disciplina`);
-
-ALTER TABLE `disciplina` ADD `aulas_semanais` INT NOT NULL AFTER `ch`;
-
-ALTER TABLE `turma`
-CHANGE `curso` `curso` ENUM('Agropecuária', 'Alimentos', 'Informática') NOT NULL,
-CHANGE `serie` `serie` ENUM('1', '2', '3') NOT NULL;
-ALTER TABLE `disciplina` CHANGE `siape_prof` `siape_prof` VARCHAR(20) NULL DEFAULT NULL;
+CREATE INDEX `idx_disciplina_professor` ON `disciplina`(`siape_prof`);
+CREATE INDEX `idx_relatorio_professor` ON `relatorio`(`siape_prof`);
+CREATE INDEX `idx_prof_ausente_siape` ON `prof_ausente`(`siape_prof`);
+CREATE INDEX `idx_programada_turma_disciplina` ON `programada`(`id_turma`, `id_disciplina`);

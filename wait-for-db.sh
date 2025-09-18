@@ -5,7 +5,6 @@ set -e
 
 host="db"
 port="3306"
-shift
 cmd="$@"
 
 until nc -z "$host" "$port"; do

@@ -14,6 +14,10 @@ class AdministradorDAO {
     public $senha_adm; // Propriedade para armazenar o hash da senha (nome da coluna no seu DB)
     public $cargo;
 
+    public function __construct($db_connection) {
+        $this->conn = $db_connection;
+    }
+
     /**
      * Define um valor para uma propriedade específica do DAO.
      * Usado para popular o objeto DAO antes de realizar operações de banco de dados.
@@ -29,27 +33,20 @@ class AdministradorDAO {
      * @return bool Retorna TRUE se o cadastro for bem-sucedido, FALSE caso contrário.
      */
     public function cadastrar() {
-        $conexao = new Conexao(); // Cria uma nova instância da classe de conexão.
-        $conn = $conexao->get_connection(); // Obtém o objeto de conexão MySQLi.
-
-        if (!$conn) {
+        if (!$this->conn) { // A conexão já deve ter sido injetada e verificada.
             // Se a conexão falhar, registra um erro e retorna FALSE.
             error_log("AdministradorDAO - Falha na conexão com o banco de dados.");
-            $_SESSION['cadastro_error'] = "Erro interno do servidor. Tente novamente mais tarde.";
-            return false;
+            return false; // Não é necessário definir $_SESSION['cadastro_error'] aqui, a camada de serviço deve lidar com isso.
         }
-
         // Prepara a consulta SQL para inserir um novo registro na tabela 'admin'.
         // id_adm é AUTO_INCREMENT, então не o incluímos na inserção.
         // Incluímos 'siape_login' que você adicionou.
         $SQL = "INSERT INTO admin (siape_login, nome, senha_adm, cargo) VALUES (?, ?, ?, ?)";
-        $stmt = $conn->prepare($SQL); // Prepara a query para prevenir SQL Injection.
+        $stmt = $this->conn->prepare($SQL); // Prepara a query para prevenir SQL Injection.
 
         if (!$stmt) {
             // Se a preparação da query falhar, registra um erro e define uma mensagem.
-            error_log("AdministradorDAO - Erro ao preparar a query de cadastro: " . $conn->error);
             $_SESSION['cadastro_error'] = "Erro interno ao preparar o cadastro do administrador.";
-            $conexao->close();
             return false;
         }
 
@@ -69,32 +66,24 @@ class AdministradorDAO {
         }
 
         $stmt->close(); // Fecha o statement.
-        $conexao->close(); // Fecha a conexão com o banco de dados.
-        return $success; // Retorna TRUE ou FALSE dependendo do sucesso da operação.
+        return $success; // Retorna TRUE ou FALSE dependendo do sucesso da operação.        
     }
 
     /**
      * Busca os dados de um administrador no banco de dados para fins de login.
      * Utiliza o 'siape_login' para encontrar o registro.
      * @param string $siape_login O SIAPE do administrador a ser buscado.
-     * @return array|false Retorna um array associativo contendo as colunas 'senha_adm', 'nome', 'cargo'
-     * se o administrador for encontrado, ou FALSE caso contrário.
+     * @return array|false Retorna um array associativo contendo as colunas 'senha_adm', 'nome', 'cargo' se o administrador for encontrado, ou FALSE caso contrário.
      */
     public function buscarAdminParaLogin($siape_login) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        if (!$conn) {
-            return false;
-        }
-
+        if (!$this->conn) { return false; }
         // Prepara a consulta SQL para selecionar os dados necessários para o login.
         // Busca pelo 'siape_login' (a nova coluna que você adicionou).
         $SQL = "SELECT senha_adm, nome, cargo FROM admin WHERE siape_login = ?";
-        $stmt = $conn->prepare($SQL);
+        $stmt = $this->conn->prepare($SQL);
 
         if (!$stmt) {
-            error_log("AdministradorDAO - Erro ao preparar busca de dados para login: " . $conn->error);
-            $conexao->close();
+            error_log("AdministradorDAO - Erro ao preparar busca de dados para login: " . $this->conn->error);
             return false;
         }
 
@@ -104,9 +93,7 @@ class AdministradorDAO {
         $result = $stmt->get_result(); // Obtém o resultado da consulta.
         $row = $result->fetch_assoc(); // Extrai a linha como um array associativo.
 
-        $stmt->close();
-        $conexao->close();
-        return $row ?? false; // Retorna a linha encontrada (ou null se não houver), ou false se for null.
+        $stmt->close(); return $row ?? false; // Retorna a linha encontrada (ou null se não houver), ou false se for null.
     }
 
     /**
@@ -114,17 +101,13 @@ class AdministradorDAO {
      * @return array Retorna um array de administradores.
      */
     public function listarTodos() {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        if (!$conn) { return []; }
+        if (!$this->conn) { return []; }
 
         $administradores = [];
         $sql = "SELECT id_adm, siape_login, nome, cargo FROM admin ORDER BY nome ASC";
-        $stmt = $conn->prepare($sql);
+        $stmt = $this->conn->prepare($sql);
 
         if (!$stmt) {
-            error_log("AdministradorDAO - Erro ao preparar a listagem de administradores: " . $conn->error);
-            $conexao->close();
             return [];
         }
 
@@ -133,9 +116,10 @@ class AdministradorDAO {
         while ($linha = $resultado->fetch_assoc()) {
             $administradores[] = $linha;
         }
-        $stmt->close();
-        $conexao->close();
-        return $administradores;
+        $stmt->close(); return $administradores;
     }
+
+    // O destrutor não é mais necessário aqui, pois a conexão é gerenciada pela camada de serviço.
+    // public function __destruct() { ... }
 }
 ?>

@@ -11,13 +11,6 @@ private $db = 'projeto_siga';
     private $mysqli_con;
 
     /**
-     * Construtor da classe Conexao.
-     */
-    function __construct() {
-        // Nada a fazer aqui se a conexão for "lazy-loaded".
-    }
-
-    /**
      * Obtém e retorna uma conexão ativa com o banco de dados.
      * Se a conexão ainda não foi estabelecida ou se a conexão existente encontrou um erro,
      * uma nova tentativa de conexão é feita.

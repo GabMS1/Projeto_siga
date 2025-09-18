@@ -14,9 +14,8 @@ class ProgramadaDAO {
     /**
      * Construtor da classe que estabelece a conexão com o banco de dados.
      */
-    public function __construct() {
-        $conexao = new Conexao();
-        $this->conn = $conexao->get_connection();
+    public function __construct($db_connection) {
+        $this->conn = $db_connection;
     }
 
     /**
@@ -207,15 +206,6 @@ class ProgramadaDAO {
         
         $stmt->close();
         return $result;
-    }
-    
-    /**
-     * Fecha a conexão com o banco de dados.
-     */
-    public function __destruct() {
-        if ($this->conn) {
-            $this->conn->close();
-        }
     }
 }
 ?>

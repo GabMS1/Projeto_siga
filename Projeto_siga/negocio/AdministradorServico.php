@@ -32,19 +32,29 @@ class AdministradorServico {
      * @return bool Retorna TRUE se o administrador foi criado com sucesso, FALSE caso contrário.
      */
     public function criarAdministrador($siape_adm, $senha, $nome, $cargo) {
-        $administradorDAO = new AdministradorDAO(); // Cria uma instância do DAO.
-        
-        // Define as propriedades no objeto DAO com os dados recebidos do formulário.
-        $administradorDAO->set("siape_login", $siape_adm); // NOVO: Mapeia o SIAPE do formulário para 'siape_login' no DAO.
-                                                          // Lembre-se de adicionar 'siape_login' à sua tabela 'admin'!
-        $administradorDAO->set("nome", $nome);
-        
-        // CRUCIAL: A senha é hashed antes de ser armazenada no banco de dados.
-        $administradorDAO->set("senha_adm", password_hash($senha, PASSWORD_DEFAULT)); // Mapeia para 'senha_adm' no DAO
-        $administradorDAO->set("cargo", $cargo);
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        if (!$conn) {
+            $_SESSION['cadastro_error'] = "Erro de conexão com o banco de dados.";
+            return false;
+        }
 
-        // Chama o método cadastrar do AdministradorDAO para salvar os dados.
-        return $administradorDAO->cadastrar();
+        try {
+            $administradorDAO = new AdministradorDAO($conn);
+            
+            $administradorDAO->set("siape_login", $siape_adm);
+            $administradorDAO->set("nome", $nome);
+            $administradorDAO->set("senha_adm", password_hash($senha, PASSWORD_DEFAULT));
+            $administradorDAO->set("cargo", $cargo);
+
+            return $administradorDAO->cadastrar();
+        } catch (Exception $e) {
+            error_log("AdministradorServico->criarAdministrador: " . $e->getMessage());
+            $_SESSION['cadastro_error'] = "Ocorreu um erro interno ao criar o administrador.";
+            return false;
+        } finally {
+            $conexao->close();
+        }
     }
 
     /**
@@ -56,22 +66,31 @@ class AdministradorServico {
      * ou FALSE se as credenciais forem inválidas.
      */
     public function autenticar($siape_adm, $senha_digitada) {
-        $administradorDAO = new AdministradorDAO(); // Cria uma instância do DAO.
-        
-        // Busca os dados do administrador no banco de dados com base no SIAPE de login.
-        $adminData = $administradorDAO->buscarAdminParaLogin($siape_adm);
-
-        // Verifica se um administrador foi encontrado E se a senha digitada corresponde ao hash da senha armazenada.
-        if ($adminData && password_verify($senha_digitada, $adminData['senha_adm'])) { // Usa 'senha_adm' da sua tabela
-            // Se a autenticação for bem-sucedida, retorna um array com as informações do administrador.
-            return [
-                'siape' => $siape_adm, // Retorna o SIAPE que foi usado para login
-                'nome' => $adminData['nome'],
-                'cargo' => $adminData['cargo']
-            ];
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        if (!$conn) {
+            error_log("AdministradorServico->autenticar: Falha na conexão.");
+            return false;
         }
-        // Se o administrador não for encontrado ou a senha não corresponder, retorna FALSE.
-        return false;
+
+        try {
+            $administradorDAO = new AdministradorDAO($conn);
+            $adminData = $administradorDAO->buscarAdminParaLogin($siape_adm);
+
+            if ($adminData && password_verify($senha_digitada, $adminData['senha_adm'])) {
+                return [
+                    'siape' => $siape_adm,
+                    'nome' => $adminData['nome'],
+                    'cargo' => $adminData['cargo']
+                ];
+            }
+            return false;
+        } catch (Exception $e) {
+            error_log("AdministradorServico->autenticar: " . $e->getMessage());
+            return false;
+        } finally {
+            $conexao->close();
+        }
     }
 
     /**
@@ -79,8 +98,12 @@ class AdministradorServico {
      * @return array Um array com todos os administradores.
      */
     public function listarAdministradores() {
-        $administradorDAO = new AdministradorDAO();
-        return $administradorDAO->listarTodos();
+        $conexao = new Conexao();
+        $conn = $conexao->get_connection();
+        $administradorDAO = new AdministradorDAO($conn);
+        $resultado = $administradorDAO->listarTodos();
+        $conexao->close();
+        return $resultado;
     }
 }
 ?>
