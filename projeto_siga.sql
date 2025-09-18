@@ -1,6 +1,7 @@
 CREATE DATABASE IF NOT EXISTS projeto_siga;
 
-USE `projeto_siga` DROP TABLE IF EXISTS `relatorio`, `programada`, `prof_subs`, `prof_ausente`, `turma`, `disciplina`, `admin`, `professor`;
+USE `projeto_siga`;
+DROP TABLE IF EXISTS `relatorio`, `programada`, `prof_subs`, `prof_ausente`, `turma`, `disciplina`, `admin`, `professor`;
 
 -- Tabela de professores
 CREATE TABLE `professor` (
