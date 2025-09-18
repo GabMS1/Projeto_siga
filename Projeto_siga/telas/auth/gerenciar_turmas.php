@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\gerenciar_turmas.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

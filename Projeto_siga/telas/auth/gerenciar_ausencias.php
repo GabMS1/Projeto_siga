@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\gerenciar_ausencias.php
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -166,11 +166,11 @@ try {
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p style="text-align: center; padding: 20px;">Nenhuma solicitação de ausência ou reposição pendente.</p>
-        <?php endif; ?>
+                <?php else: ?>
+                    <p style="text-align: center; padding: 20px;">Nenhuma solicitação de ausência ou reposição pendente.</p>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 

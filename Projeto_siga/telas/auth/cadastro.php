@@ -1,9 +1,9 @@
-﻿<?php
+<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\cadastro.php
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-};
+}
 
 require_once __DIR__ . '/../../negocio/ProfessorServico.php';
 

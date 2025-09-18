@@ -1,9 +1,10 @@
 ﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\Principal.php
-
+echo "olá";
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
 
 require_once __DIR__ . '/../../DAO/Conexao.php';
 

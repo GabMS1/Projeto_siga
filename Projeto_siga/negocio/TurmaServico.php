@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\negocio\TurmaServico.php
 
 // Inclui o TurmaDAO para operações de banco de dados.

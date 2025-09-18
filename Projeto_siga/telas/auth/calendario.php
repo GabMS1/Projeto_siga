@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\calendario.php
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -257,6 +257,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderCalendar();
                 } else {
                     console.error('Erro ao carregar os dados de eventos:', data.message);
+                    // Adicionando um fallback para exibir a mensagem de erro na UI
+                    noEventsMessageEl.textContent = `Erro ao carregar eventos: ${data.message}`;
+                    noEventsMessageEl.style.display = 'block';
                 }
             })
             .catch(error => {

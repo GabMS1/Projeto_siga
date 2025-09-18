@@ -2,12 +2,15 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "80:80"
     volumes:
       - ./Projeto_siga:/var/www/html
+      - ./output_buffering.ini:/usr/local/etc/php/conf.d/output_buffering.ini
     depends_on:
       - db
     env_file:
@@ -18,7 +21,7 @@ services:
     restart: always
     volumes:
       - db_data:/var/lib/mysql
-      - ./Projeto_siga/projeto_siga.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./projeto_siga.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: projeto_siga

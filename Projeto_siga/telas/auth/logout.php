@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\logout.php
 
 // Inicia a sessão para poder manipulá-la.

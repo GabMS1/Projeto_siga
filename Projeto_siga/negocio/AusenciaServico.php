@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\negocio\AusenciaServico.php
 
 // Inclui as classes DAO necessárias para interagir com o banco de dados.

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\DAO\ProfessorDAO.php
 
 require_once __DIR__ . '/Conexao.php';

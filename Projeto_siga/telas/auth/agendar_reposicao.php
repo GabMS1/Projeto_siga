@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\agendar_reposicao.php
 
 // ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO.

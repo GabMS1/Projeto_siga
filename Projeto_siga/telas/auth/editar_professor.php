@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\editar_professor.php
 
 if (session_status() === PHP_SESSION_NONE) {

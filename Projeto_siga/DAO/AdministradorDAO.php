@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\DAO\AdministradorDAO.php
 
 // Inclui o arquivo de conexão com o banco de dados.

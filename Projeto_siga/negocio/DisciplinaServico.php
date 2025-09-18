@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\negocio\DisciplinaServico.php
 
 require_once __DIR__ . '/../DAO/DisciplinaDAO.php';

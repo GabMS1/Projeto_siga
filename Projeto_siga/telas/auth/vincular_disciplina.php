@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\vincular_disciplina.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

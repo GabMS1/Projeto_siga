@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga-1\Projeto_siga\negocio\AdministradorServico.php
 
 // Inclui o arquivo AdministradorDAO, que contém a lógica de interação com o banco de dados para administradores.

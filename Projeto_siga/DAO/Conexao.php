@@ -1,14 +1,17 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\DAO\Conexao.php
 
 class Conexao {
-private $host = 'db'; // O nome do serviço do banco de dados no Docker Compose
-private $user = 'user_siga'; // Altere para o usuário definido no docker-compose.yml
-private $pass = 'siga_password'; // Altere para a senha definida no docker-compose.yml
+private $host = 'db'; 
+private $user = 'user_siga'; 
+private $pass = 'siga_password'; 
 private $db = 'projeto_siga';
+    
+    // Declaração da propriedade para evitar o aviso do PHP
+    private $mysqli_con;
+
     /**
      * Construtor da classe Conexao.
-     * No MySQLi, a conexão é geralmente estabelecida no método get_connection() para carregamento "lazy".
      */
     function __construct() {
         // Nada a fazer aqui se a conexão for "lazy-loaded".
@@ -49,4 +52,3 @@ private $db = 'projeto_siga';
         }
     }
 }
-?>
