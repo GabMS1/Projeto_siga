@@ -6,9 +6,8 @@ require_once __DIR__ . '/Conexao.php';
 class ProfessorDAO {
     private $conn;
 
-    public function __construct() {
-        $conexao = new Conexao();
-        $this->conn = $conexao->get_connection();
+    public function __construct($db_connection) {
+        $this->conn = $db_connection;
     }
 
     public function cadastrar($siape, $nome, $senha_hash) {

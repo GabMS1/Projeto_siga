@@ -36,13 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['cadastro_disciplina_error'] = "O número de aulas semanais deve ser um inteiro positivo.";
     }
     else {
-        // Lembre-se de atualizar o DisciplinaServico e DisciplinaDAO para incluir 'aulas_semanais' no cadastro.
-        $disciplinaServico->set("nome_disciplina", $nome_disciplina);
-        $disciplinaServico->set("ch", (int)$carga_horaria_input);
-        // O siape_prof pode ser uma string vazia, que deve ser tratada como NULL no banco.
-        $disciplinaServico->set("siape_prof", !empty($siape_prof) ? $siape_prof : null);
-
-        if ($disciplinaServico->cadastrar()) {
+        $siape_final = !empty($siape_prof) ? $siape_prof : null;
+        
+        // Passa os dados diretamente para o método cadastrar
+        if ($disciplinaServico->cadastrar($nome_disciplina, (int)$carga_horaria_input, $siape_final, (int)$aulas_semanais_input)) {
             $_SESSION['op_success'] = "Disciplina '" . htmlspecialchars($nome_disciplina) . "' cadastrada com sucesso!";
             header("Location: disciplinas.php"); 
             exit();

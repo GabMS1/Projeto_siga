@@ -1,4 +1,4 @@
-﻿﻿﻿<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\negocio\AusenciaServico.php
 
 // Inclui as classes DAO necessárias para interagir com o banco de dados.
@@ -15,6 +15,11 @@ require_once __DIR__ . '/../DAO/Conexao.php';
  * Ela orquestra as operações, chamando as classes DAO para persistir os dados.
  */
 class AusenciaServico {
+    private $conn;
+
+    public function __construct() {
+        $this->conn = Conexao::get_connection();
+    }
     
     /**
      * Registra uma ausência e sua respectiva reposição no sistema.
@@ -27,18 +32,19 @@ class AusenciaServico {
      * @return bool True se o registro for bem-sucedido, false caso contrário.
      */
     public function registrarAusenciaEReposicao($dados) {
-        
+        if (!$this->conn) {
+            $_SESSION['reposicao_error'] = "Erro de conexão com o banco de dados.";
+            return false;
+        }
         // Inicia a transação no banco de dados para garantir a consistência
         // Se qualquer uma das operações falhar, todas serão desfeitas.
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        $conn->begin_transaction();
+        $this->conn->begin_transaction();
 
         try {
             // 1. Instancia os DAOs com a mesma conexão
-            $profAusenteDAO = new ProfAusenteDAO($conn);
-            $profSubsDAO = new ProfSubsDAO($conn);
-            $programadaDAO = new ProgramadaDAO($conn);
+            $profAusenteDAO = new ProfAusenteDAO($this->conn);
+            $profSubsDAO = new ProfSubsDAO($this->conn);
+            $programadaDAO = new ProgramadaDAO($this->conn);
 
             // 2. Cadastra o professor ausente na tabela 'prof_ausente'
             $id_ausente = $profAusenteDAO->cadastrar($dados['assinatura_ausente'], $dados['siape_ausente']);
@@ -70,17 +76,15 @@ class AusenciaServico {
             }
 
             // Se tudo deu certo, confirma a transação (salva no banco).
-            $conn->commit();
+            $this->conn->commit();
             return true;
 
         } catch (Exception $e) {
             // Em caso de qualquer erro, desfaz todas as operações da transação.
-            $conn->rollback();
+            $this->conn->rollback();
             error_log("AusenciaServico: Falha na transação de reposição - " . $e->getMessage());
             $_SESSION['reposicao_error'] = "Ocorreu um erro ao registrar a reposição. " . $e->getMessage();
             return false;
-        } finally {
-            $conexao->close();
         }
     }
     
@@ -90,13 +94,13 @@ class AusenciaServico {
      * @return bool True se o registro for bem-sucedido, false caso contrário.
      */
     public function programarFalta($dados) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        $conn->begin_transaction();
+        if (!$this->conn) { return false; }
+
+        $this->conn->begin_transaction();
 
         try {
-            $profAusenteDAO = new ProfAusenteDAO($conn);
-            $programadaDAO = new ProgramadaDAO($conn);
+            $profAusenteDAO = new ProfAusenteDAO($this->conn);
+            $programadaDAO = new ProgramadaDAO($this->conn);
 
             $id_ausente = $profAusenteDAO->cadastrar($dados['assinatura_ausente'], $dados['siape_ausente']);
 
@@ -119,14 +123,12 @@ class AusenciaServico {
                 throw new Exception("Erro ao programar a falta.");
             }
 
-            $conn->commit();
+            $this->conn->commit();
             return true;
         } catch (Exception $e) {
-            $conn->rollback();
+            $this->conn->rollback();
             error_log("AusenciaServico: Falha na transação de programação de falta - " . $e->getMessage());
             return false;
-        } finally {
-            $conexao->close();
         }
     }
 
@@ -138,14 +140,13 @@ class AusenciaServico {
      * @return bool True se a atualização for bem-sucedida, false caso contrário.
      */
     public function pegarFalta($id_progra, $siape_substituto, $assinatura_substituto) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        $conn->begin_transaction();
+        if (!$this->conn) { return false; }
+        $this->conn->begin_transaction();
 
         try {
             // 1. Instancia os DAOs com a mesma conexão
-            $profSubsDAO = new ProfSubsDAO($conn);
-            $programadaDAO = new ProgramadaDAO($conn);
+            $profSubsDAO = new ProfSubsDAO($this->conn);
+            $programadaDAO = new ProgramadaDAO($this->conn);
 
             // 2. Cadastra o professor substituto na tabela 'prof_subs'
             $id_substituto = $profSubsDAO->cadastrar($assinatura_substituto, $siape_substituto);
@@ -162,16 +163,14 @@ class AusenciaServico {
             }
 
             // Se tudo deu certo, confirma a transação.
-            $conn->commit();
+            $this->conn->commit();
             return true;
 
         } catch (Exception $e) {
             // Em caso de qualquer erro, desfaz a transação.
-            $conn->rollback();
+            $this->conn->rollback();
             error_log("AusenciaServico: Falha na transação de 'pegar falta' - " . $e->getMessage());
             return false;
-        } finally {
-            $conexao->close();
         }
     }
 
@@ -183,11 +182,10 @@ class AusenciaServico {
      * @return array Um array de reposições.
      */
     public function listarReposicoesPorProfessor($siape_prof) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        $programadaDAO = new ProgramadaDAO($conn);
+        if (!$this->conn) { return []; }
+
+        $programadaDAO = new ProgramadaDAO($this->conn);
         $resultado = $programadaDAO->buscarReposicoesPorProfessor((string)$siape_prof);
-        $conexao->close();
         return $resultado;
     }
     
@@ -197,11 +195,10 @@ class AusenciaServico {
      * @return array Um array de ausências pendentes.
      */
     public function listarTodasAusenciasPendentes() {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        $programadaDAO = new ProgramadaDAO($conn);
+        if (!$this->conn) { return []; }
+
+        $programadaDAO = new ProgramadaDAO($this->conn);
         $resultado = $programadaDAO->buscarTodasAusenciasPendentes();
-        $conexao->close();
         return $resultado;
     }
     
@@ -210,11 +207,10 @@ class AusenciaServico {
      * @return array Um array de reposições.
      */
     public function listarTodasReposicoes() {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        $programadaDAO = new ProgramadaDAO($conn);
+        if (!$this->conn) { return []; }
+
+        $programadaDAO = new ProgramadaDAO($this->conn);
         $resultado = $programadaDAO->listarTodasReposicoes();
-        $conexao->close();
         return $resultado;
     }
 }

@@ -63,15 +63,15 @@ class ProgramadaDAO {
             SELECT 
                 p.dia, 
                 p.horario, 
-                t.curso,
-                t.serie,
+                ts.curso,
+                ts.serie,
                 d.nome_disciplina,
                 pa.siape_prof AS siape_ausente,
                 ps.siape_prof AS siape_substituto
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
             LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
-            JOIN turma t ON p.id_turma = t.id_turma
+            JOIN turmas ts ON p.id_turma = ts.id_turma
             JOIN disciplina d ON p.id_disciplina = d.id_disciplina
             WHERE pa.siape_prof = ? OR ps.siape_prof = ?
             ORDER BY p.dia ASC, p.horario ASC
@@ -109,15 +109,15 @@ class ProgramadaDAO {
                 p.id_progra, 
                 p.dia, 
                 p.horario, 
-                t.curso,
-                t.serie,
+                ts.curso,
+                ts.serie,
                 d.nome_disciplina,
                 pa.siape_prof AS siape_ausente,
                 ps.siape_prof AS siape_substituto
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
             LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
-            JOIN turma t ON p.id_turma = t.id_turma
+            JOIN turmas ts ON p.id_turma = ts.id_turma
             JOIN disciplina d ON p.id_disciplina = d.id_disciplina
             LEFT JOIN relatorio r ON p.id_progra = r.id_progra
             WHERE r.id_progra IS NULL
@@ -153,8 +153,8 @@ class ProgramadaDAO {
                 p.id_progra,
                 p.dia, 
                 p.horario, 
-                t.curso,
-                t.serie,
+                ts.curso,
+                ts.serie,
                 d.nome_disciplina,
                 pa.ass_ausente AS nome_ausente,
                 pa.siape_prof AS siape_ausente,
@@ -163,7 +163,7 @@ class ProgramadaDAO {
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
             LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
-            JOIN turma t ON p.id_turma = t.id_turma
+            JOIN turmas ts ON p.id_turma = ts.id_turma
             JOIN disciplina d ON p.id_disciplina = d.id_disciplina
             ORDER BY p.dia ASC, p.horario ASC
         ";

@@ -13,6 +13,7 @@ class AdministradorDAO {
     public $nome;
     public $senha_adm; // Propriedade para armazenar o hash da senha (nome da coluna no seu DB)
     public $cargo;
+    private $conn;
 
     public function __construct($db_connection) {
         $this->conn = $db_connection;

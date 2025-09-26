@@ -13,18 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $siape = $_POST['siape_prof'] ?? '';
     $nome = $_POST['nome'] ?? '';
     $senha = $_POST['senha'] ?? '';
-
-    $professorServico->set("siape_prof", $siape);
-    $professorServico->set("nome", $nome);
-    $professorServico->set("senha", $senha);
-
+    
     if (empty($siape) || empty($nome) || empty($senha)) {
         $_SESSION['cadastro_error'] = "Todos os campos são obrigatórios.";
         header("Location: cadastro.php");
         exit;
     }
-
-    if ($professorServico->cadastrar()) {
+    // Passa os dados diretamente para o método cadastrar
+    if ($professorServico->cadastrar($siape, $nome, $senha)) {
         $_SESSION['cadastro_success'] = "Professor cadastrado com sucesso! Faça seu login.";
         header("Location: login.php");
         exit;

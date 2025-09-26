@@ -12,11 +12,12 @@ class TurmaDAO {
 
     public function buscarTodas() {
         $turmas = [];
-        $sql = "SELECT t.id_turma, t.curso, t.serie, d.id_disciplina, d.nome_disciplina, p.nome as nome_professor
-                FROM turma t
-                JOIN disciplina d ON t.id_disciplina = d.id_disciplina
+        $sql = "SELECT td.id_turma, ts.curso, ts.serie, d.id_disciplina, d.nome_disciplina, p.nome as nome_professor
+                FROM turma_disciplinas td
+                JOIN turmas ts ON td.id_turma = ts.id_turma
+                JOIN disciplina d ON td.id_disciplina = d.id_disciplina
                 LEFT JOIN professor p ON d.siape_prof = p.siape_prof
-                ORDER BY t.id_turma, d.nome_disciplina ASC";
+                ORDER BY td.id_turma, d.nome_disciplina ASC";
         
         if (!$this->conn) {
             error_log("TurmaDAO - Falha na conexão com o banco de dados.");
@@ -35,6 +36,36 @@ class TurmaDAO {
         return $turmas;
     }
 
+    /**
+     * Cadastra uma nova turma na tabela 'turmas'.
+     */
+    public function cadastrarTurma($id_turma, $curso, $serie) {
+        if (!$this->conn) {
+            $_SESSION['op_error'] = "Erro de conexão.";
+            return false;
+        }
+
+        $SQL = "INSERT INTO turmas (id_turma, curso, serie) VALUES (?, ?, ?)";
+        $stmt = $this->conn->prepare($SQL);
+        if (!$stmt) {
+            $_SESSION['op_error'] = "Erro ao preparar cadastro da turma.";
+            return false;
+        }
+
+        $stmt->bind_param("isi", $id_turma, $curso, $serie);
+        $success = $stmt->execute();
+
+        if (!$success) {
+            if ($stmt->errno == 1062) { // Chave duplicada
+                $_SESSION['op_error'] = "O ID de turma '" . htmlspecialchars($id_turma) . "' já existe.";
+            } else {
+                $_SESSION['op_error'] = "Erro no banco de dados: " . $stmt->error;
+            }
+        }
+        $stmt->close();
+        return $success;
+    }
+
     public $id_turma;
     public $curso;
     public $serie;
@@ -44,30 +75,33 @@ class TurmaDAO {
         $this->$prop = $value;
     }
 
-    public function cadastrar() {
+    /**
+     * Associa uma disciplina a uma turma na tabela 'turma_disciplinas'.
+     */
+    public function associarDisciplina() {
         if (!$this->conn) {
-            $_SESSION['cadastro_turma_error'] = "Erro interno do servidor. Tente novamente mais tarde.";
+            $_SESSION['op_error'] = "Erro interno do servidor. Tente novamente mais tarde.";
             return false;
         }
-
-        $SQL = "INSERT INTO turma (id_turma, curso, serie, id_disciplina) VALUES (?, ?, ?, ?)";
+        // A tabela agora é turma_disciplinas e não tem mais curso e serie
+        $SQL = "INSERT INTO turma_disciplinas (id_turma, id_disciplina) VALUES (?, ?)";
         $stmt = $this->conn->prepare($SQL);
 
         if (!$stmt) {
-            $_SESSION['cadastro_turma_error'] = "Erro interno ao preparar o cadastro da turma.";
+            $_SESSION['op_error'] = "Erro interno ao preparar o cadastro da turma.";
             return false;
         }
 
-        $stmt->bind_param("issi", $this->id_turma, $this->curso, $this->serie, $this->id_disciplina);
+        $stmt->bind_param("ii", $this->id_turma, $this->id_disciplina);
         $success = $stmt->execute();
 
         if (!$success) {
             if ($stmt->errno == 1062) {
-                $_SESSION['cadastro_turma_error'] = "Esta disciplina já está cadastrada para esta turma.";
+                $_SESSION['op_error'] = "Esta disciplina já está cadastrada para esta turma.";
             } elseif ($stmt->errno == 1452) {
-                 $_SESSION['cadastro_turma_error'] = "Disciplina associada não encontrada.";
+                 $_SESSION['op_error'] = "A turma ou disciplina selecionada não existe.";
             } else {
-                $_SESSION['cadastro_turma_error'] = "Erro no banco de dados durante o cadastro da turma.";
+                $_SESSION['op_error'] = "Erro no banco de dados durante o cadastro da turma.";
             }
         }
 
@@ -78,7 +112,7 @@ class TurmaDAO {
     public function buscarPorId($id_turma) {
         if (!$this->conn) return false;
 
-        $SQL = "SELECT id_turma FROM turma WHERE id_turma = ?";
+        $SQL = "SELECT id_turma FROM turmas WHERE id_turma = ?";
         $stmt = $this->conn->prepare($SQL);
         if (!$stmt) return false;
 
@@ -97,9 +131,10 @@ class TurmaDAO {
     public function buscarTurmasPorProfessor($siape_prof) {
         if (!$this->conn) return false;
 
-        $SQL = "SELECT t.id_turma, t.curso, t.serie, d.nome_disciplina
-                FROM turma t
-                JOIN disciplina d ON t.id_disciplina = d.id_disciplina
+        $SQL = "SELECT DISTINCT ts.id_turma, ts.curso, ts.serie
+                FROM turmas ts
+                JOIN turma_disciplinas td ON ts.id_turma = td.id_turma
+                JOIN disciplina d ON td.id_disciplina = d.id_disciplina
                 WHERE d.siape_prof = ?";
         $stmt = $this->conn->prepare($SQL);
         if (!$stmt) return false;
@@ -118,11 +153,12 @@ class TurmaDAO {
     }
 
     public function buscarTurmaCompletaPorId($id_turma, $id_disciplina) {
-        $sql = "SELECT t.id_turma, t.curso, t.serie, t.id_disciplina, d.nome_disciplina, d.siape_prof, p.nome as nome_professor
-                FROM turma t
-                JOIN disciplina d ON t.id_disciplina = d.id_disciplina
+        $sql = "SELECT td.id_turma, ts.curso, ts.serie, td.id_disciplina, d.nome_disciplina, d.siape_prof, p.nome as nome_professor
+                FROM turma_disciplinas td
+                JOIN turmas ts ON td.id_turma = ts.id_turma
+                JOIN disciplina d ON td.id_disciplina = d.id_disciplina
                 LEFT JOIN professor p ON d.siape_prof = p.siape_prof
-                WHERE t.id_turma = ? AND t.id_disciplina = ?";
+                WHERE td.id_turma = ? AND td.id_disciplina = ?";
         
         if (!$this->conn) return false;
 
@@ -142,11 +178,12 @@ class TurmaDAO {
      */
     public function buscarDisciplinasEProfessoresPorTurmaId($id_turma) {
         $detalhes = [];
-        $sql = "SELECT t.curso, t.serie, d.nome_disciplina, p.nome as nome_professor, p.siape_prof
-                FROM turma t
-                JOIN disciplina d ON t.id_disciplina = d.id_disciplina
+        $sql = "SELECT ts.curso, ts.serie, d.nome_disciplina, p.nome as nome_professor, p.siape_prof
+                FROM turma_disciplinas td
+                JOIN turmas ts ON td.id_turma = ts.id_turma
+                JOIN disciplina d ON td.id_disciplina = d.id_disciplina
                 LEFT JOIN professor p ON d.siape_prof = p.siape_prof
-                WHERE t.id_turma = ?
+                WHERE td.id_turma = ?
                 ORDER BY d.nome_disciplina ASC";
 
         if (!$this->conn) return [];

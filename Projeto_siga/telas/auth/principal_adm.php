@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\principal_adm.php
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -22,10 +22,7 @@ $totalDisciplinas = 0;
 $totalTurmas = 0;
 $reposicoesPendentes = 0;
 
-$conexao = new Conexao();
-$conn = $conexao->get_connection();
-
-if ($conn) {
+if ($conn = Conexao::get_connection()) {
     $stmtProf = $conn->prepare("SELECT COUNT(*) AS total FROM professor");
     if($stmtProf) { $stmtProf->execute(); $resProf = $stmtProf->get_result(); if($row = $resProf->fetch_assoc()) { $totalProfessores = $row['total']; } $stmtProf->close(); }
 
@@ -35,13 +32,12 @@ if ($conn) {
     $stmtDisc = $conn->prepare("SELECT COUNT(*) AS total FROM disciplina");
     if($stmtDisc) { $stmtDisc->execute(); $resDisc = $stmtDisc->get_result(); if($row = $resDisc->fetch_assoc()) { $totalDisciplinas = $row['total']; } $stmtDisc->close(); }
     
-    $stmtTurmas = $conn->prepare("SELECT COUNT(DISTINCT id_turma) AS total FROM turma");
+    $stmtTurmas = $conn->prepare("SELECT COUNT(*) AS total FROM turmas");
     if($stmtTurmas) { $stmtTurmas->execute(); $resTurmas = $stmtTurmas->get_result(); if($row = $resTurmas->fetch_assoc()) { $totalTurmas = $row['total']; } $stmtTurmas->close(); }
 
     $stmtPend = $conn->prepare("SELECT COUNT(*) AS total FROM programada p LEFT JOIN relatorio r ON p.id_progra = r.id_progra WHERE r.id_progra IS NULL AND p.id_ass_subs IS NOT NULL");
     if($stmtPend) { $stmtPend->execute(); $resPend = $stmtPend->get_result(); if($row = $resPend->fetch_assoc()) { $reposicoesPendentes = $row['total']; } $stmtPend->close(); }
 
-    $conexao->close();
 } else {
     error_log("principal_adm.php: Conexão com o banco de dados falhou.");
 }

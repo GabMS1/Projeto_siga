@@ -13,6 +13,8 @@ if (!isset($_SESSION['usuario_logado']) || $_SESSION['tipo_usuario'] !== 'admin'
 
 require_once __DIR__ . '/../../negocio/TurmaServico.php';
 require_once __DIR__ . '/../../negocio/DisciplinaServico.php';
+require_once __DIR__ . '/../../DAO/TurmaDAO.php'; // Para listar turmas
+require_once __DIR__ . '/helpers.php';
 
 $disciplinas = [];
 $mensagem = "";
@@ -20,37 +22,45 @@ $mensagem = "";
 try {
     $disciplinaServico = new DisciplinaServico();
     $disciplinas = $disciplinaServico->listarDisciplinas();
+    
+    $turmaServico = new TurmaServico();
+    $turmasRaw = $turmaServico->listarTodasAsTurmas();
+    $turmas = [];
+    foreach ($turmasRaw as $t) {
+        $turmas[$t['id_turma']] = $t['id_turma'] . ' - ' . $t['curso'] . ' ' . $t['serie'] . 'º Ano';
+    }
+    $turmas = array_unique($turmas);
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $id_turma = $_POST['id_turma'] ?? '';
-        $curso = $_POST['curso'] ?? '';
-        $serie = $_POST['serie'] ?? '';
         $id_disciplina = $_POST['id_disciplina'] ?? '';
 
-        if (empty($id_turma) || empty($curso) || empty($serie) || empty($id_disciplina)) {
-            $_SESSION['cadastro_turma_error'] = "Todos os campos são obrigatórios.";
-        } elseif (!is_numeric($id_turma) || (int)$id_turma <= 0) {
-            $_SESSION['cadastro_turma_error'] = "O ID da Turma deve ser um número inteiro positivo.";
+        if (empty($id_turma) || empty($id_disciplina)) {
+            redirect_with_error("Todos os campos são obrigatórios.", "cadastrar_turma_adm.php");
         } else {
-            $turmaServico = new TurmaServico();
-            $turmaServico->set("id_turma", (int)$id_turma);
-            $turmaServico->set("curso", $curso);
-            $turmaServico->set("serie", $serie);
-            $turmaServico->set("id_disciplina", (int)$id_disciplina);
-
-            if ($turmaServico->cadastrar()) {
-                $_SESSION['op_success'] = "Turma cadastrada com sucesso! ID: " . htmlspecialchars($id_turma);
-                header("Location: gerenciar_turmas.php"); 
-                exit();
+            if ($turmaServico->associarDisciplina((int)$id_turma, (int)$id_disciplina)) {
+                redirect_with_success("Disciplina associada à turma " . htmlspecialchars($id_turma) . " com sucesso!", "gerenciar_turmas.php");
             } else {
-                if (!isset($_SESSION['cadastro_turma_error'])) {
-                    $_SESSION['cadastro_turma_error'] = "Erro ao cadastrar turma. Verifique se a combinação de turma e disciplina já não existe.";
-                }
+                // A mensagem de erro específica já foi definida no TurmaDAO e está em $_SESSION['op_error'].
+                // Se a sessão não tiver a mensagem, usamos uma mensagem padrão.
+                $error_message = $_SESSION['op_error'] ?? "Erro desconhecido ao associar disciplina.";
+                redirect_with_error($error_message, "cadastrar_turma_adm.php");
             }
         }
-        header("Location: cadastrar_turma_adm.php"); 
-        exit();
     }
+
+try {
+    $disciplinaServico = new DisciplinaServico();
+    $disciplinas = $disciplinaServico->listarDisciplinas();
+    
+    $turmaServico = new TurmaServico();
+    $turmasRaw = $turmaServico->listarTodasAsTurmas();
+    $turmas = [];
+    foreach ($turmasRaw as $t) {
+        $turmas[$t['id_turma']] = $t['id_turma'] . ' - ' . $t['curso'] . ' ' . $t['serie'] . 'º Ano';
+    }
+    $turmas = array_unique($turmas);
+
 } catch (Exception $e) {
     $mensagem = "Erro ao carregar dados: " . $e->getMessage();
 }
@@ -59,7 +69,7 @@ try {
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8" />
-    <title>Cadastrar Nova Turma - SIGA</title>
+    <title>Associar Disciplina à Turma - SIGA</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
     <style>
@@ -131,39 +141,22 @@ try {
 
 <div class="main-content">
     <div class="container">
-        <h1>Cadastrar Nova Turma</h1>
+        <h1>Associar Disciplina à Turma</h1>
         <?php
-        if (isset($_SESSION['cadastro_turma_error'])) {
-            echo '<p class="alert alert-danger">' . htmlspecialchars($_SESSION['cadastro_turma_error']) . '</p>';
-            unset($_SESSION['cadastro_turma_error']);
-        }
-        if (!empty($mensagem)) {
-            echo '<p class="alert alert-danger">' . htmlspecialchars($mensagem) . '</p>';
-        }
+        display_session_alerts(); // Exibe alertas de sucesso ou erro
+        if (!empty($mensagem)) { echo '<p class="alert alert-danger">' . htmlspecialchars($mensagem) . '</p>'; }
         ?>
         <form action="" method="POST">
             <div class="form-group">
-                <label for="id_turma">ID da Turma (Ex: 301, 202)</label>
-                <input type="number" id="id_turma" name="id_turma" min="1" required>
-            </div>
-            <div class="form-group">
-                <label for="curso">Curso</label>
-                <select id="curso" name="curso" required>
-                    <option value="">Selecione o Curso</option>
-                    <option value="Agropecuária">Agropecuária</option>
-                    <option value="Alimentos">Alimentos</option>
-                    <option value="Informática">Informática</option>
+                <label for="id_turma">Turma</label>
+                <select id="id_turma" name="id_turma" required>
+                    <option value="">Selecione uma Turma</option>
+                    <?php foreach ($turmas as $id => $nome): ?>
+                        <option value="<?= htmlspecialchars($id); ?>"><?= htmlspecialchars($nome); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="serie">Série</label>
-                <select id="serie" name="serie" required>
-                    <option value="">Selecione a Série</option>
-                    <option value="1">1º Ano</option>
-                    <option value="2">2º Ano</option>
-                    <option value="3">3º Ano</option>
-                </select>
-            </div>
+
             <div class="form-group">
                 <label for="id_disciplina">Disciplina</label>
                 <select id="id_disciplina" name="id_disciplina" required>
@@ -181,7 +174,7 @@ try {
             </div>
             <div class="form-actions">
                 <a href="gerenciar_turmas.php" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">Cadastrar Turma</button>
+                <button type="submit" class="btn btn-success">Associar Disciplina</button>
             </div>
         </form>
     </div>

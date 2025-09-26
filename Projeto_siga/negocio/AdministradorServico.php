@@ -3,14 +3,23 @@
 
 // Inclui o arquivo AdministradorDAO, que contém a lógica de interação com o banco de dados para administradores.
 require_once __DIR__ . '/../DAO/AdministradorDAO.php';
+require_once __DIR__ . '/../DAO/Conexao.php';
 
 // A classe AdministradorServico lida com as regras de negócio para administradores,
 // como criar novos administradores e autenticá-los.
 class AdministradorServico {
-    public $siape_adm; // Propriedade para armazenar o SIAPE do administrador (este é o campo do formulário)
-    public $nome;       // Propriedade para armazenar o nome do administrador
-    public $senha;      // Propriedade para armazenar a senha do administrador (texto puro antes do hash)
-    public $cargo;      // Propriedade para armazenar o cargo do administrador
+    private $administradorDAO;
+    private $conn;
+
+    public function __construct() {
+        $this->conn = Conexao::get_connection();
+        if ($this->conn) {
+            $this->administradorDAO = new AdministradorDAO($this->conn);
+        }
+    }
+
+    // O método set pode ser removido se os dados forem passados diretamente para os métodos de serviço,
+    // o que é uma prática mais limpa.
 
     /**
      * Define um valor para uma propriedade específica da classe.
@@ -18,9 +27,7 @@ class AdministradorServico {
      * @param string $prop Nome da propriedade a ser definida.
      * @param mixed $value O valor a ser atribuído.
      */
-    public function set($prop, $value) {
-        $this->$prop = $value;
-    }
+    // public function set($prop, $value) { ... }
 
     /**
      * Gerencia o processo de criação de um novo administrador.
@@ -32,28 +39,22 @@ class AdministradorServico {
      * @return bool Retorna TRUE se o administrador foi criado com sucesso, FALSE caso contrário.
      */
     public function criarAdministrador($siape_adm, $senha, $nome, $cargo) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        if (!$conn) {
+        if (!$this->conn) {
             $_SESSION['cadastro_error'] = "Erro de conexão com o banco de dados.";
             return false;
         }
 
         try {
-            $administradorDAO = new AdministradorDAO($conn);
-            
-            $administradorDAO->set("siape_login", $siape_adm);
-            $administradorDAO->set("nome", $nome);
-            $administradorDAO->set("senha_adm", password_hash($senha, PASSWORD_DEFAULT));
-            $administradorDAO->set("cargo", $cargo);
+            $this->administradorDAO->set("siape_login", $siape_adm);
+            $this->administradorDAO->set("nome", $nome);
+            $this->administradorDAO->set("senha_adm", password_hash($senha, PASSWORD_DEFAULT));
+            $this->administradorDAO->set("cargo", $cargo);
 
-            return $administradorDAO->cadastrar();
+            return $this->administradorDAO->cadastrar();
         } catch (Exception $e) {
             error_log("AdministradorServico->criarAdministrador: " . $e->getMessage());
             $_SESSION['cadastro_error'] = "Ocorreu um erro interno ao criar o administrador.";
             return false;
-        } finally {
-            $conexao->close();
         }
     }
 
@@ -66,16 +67,13 @@ class AdministradorServico {
      * ou FALSE se as credenciais forem inválidas.
      */
     public function autenticar($siape_adm, $senha_digitada) {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        if (!$conn) {
+        if (!$this->conn) {
             error_log("AdministradorServico->autenticar: Falha na conexão.");
             return false;
         }
 
         try {
-            $administradorDAO = new AdministradorDAO($conn);
-            $adminData = $administradorDAO->buscarAdminParaLogin($siape_adm);
+            $adminData = $this->administradorDAO->buscarAdminParaLogin($siape_adm);
 
             if ($adminData && password_verify($senha_digitada, $adminData['senha_adm'])) {
                 return [
@@ -88,22 +86,18 @@ class AdministradorServico {
         } catch (Exception $e) {
             error_log("AdministradorServico->autenticar: " . $e->getMessage());
             return false;
-        } finally {
-            $conexao->close();
         }
     }
 
     /**
      * Lista todos os administradores.
-     * @return array Um array com todos os administradores.
+     * @return array Um array com todos os administradores ou um array vazio em caso de erro.
      */
     public function listarAdministradores() {
-        $conexao = new Conexao();
-        $conn = $conexao->get_connection();
-        $administradorDAO = new AdministradorDAO($conn);
-        $resultado = $administradorDAO->listarTodos();
-        $conexao->close();
-        return $resultado;
+        if (!$this->conn) {
+            return [];
+        }
+        return $this->administradorDAO->listarTodos();
     }
 }
 ?>

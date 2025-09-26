@@ -1,6 +1,5 @@
-﻿<?php
+﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\Principal.php
-echo "olá";
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -24,8 +23,7 @@ $totalCargaHoraria = 0;
 $horasRestantes = 0;
 $reposicoesAgendadas = [];
 
-$conexao = new Conexao();
-$conn = $conexao->get_connection();
+$conn = Conexao::get_connection();
 
 if ($conn) {
     $stmt1 = $conn->prepare("SELECT COUNT(*) AS total, SUM(ch) AS total_horas, SUM(aulas_semanais) AS total_aulas_semanais FROM disciplina WHERE siape_prof = ?");
@@ -56,16 +54,26 @@ if ($conn) {
         $stmt1->close();
     }
 
-    $stmt2 = $conn->prepare("SELECT COUNT(DISTINCT t.id_turma) AS total FROM turma t JOIN disciplina d ON t.id_disciplina = d.id_disciplina WHERE d.siape_prof = ?");
+    $stmt2 = $conn->prepare("SELECT COUNT(DISTINCT td.id_turma) AS total FROM turma_disciplinas td JOIN disciplina d ON td.id_disciplina = d.id_disciplina WHERE d.siape_prof = ?");
     if($stmt2){ $stmt2->bind_param("s", $siape); $stmt2->execute(); $res2 = $stmt2->get_result(); if($row = $res2->fetch_assoc()){ $totalTurmas = $row['total']; } $stmt2->close(); }
     
     $stmt3 = $conn->prepare("SELECT COUNT(*) AS total FROM programada p JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente WHERE p.id_ass_subs IS NULL");
     if($stmt3){ $stmt3->execute(); $res3 = $stmt3->get_result(); if($row = $res3->fetch_assoc()){ $reposicoesDisponiveis = $row['total']; } $stmt3->close(); }
 
-    $stmt4 = $conn->prepare("SELECT p.dia, p.horario, d.nome_disciplina, t.curso, t.serie FROM programada p JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs JOIN disciplina d ON p.id_disciplina = d.id_disciplina JOIN turma t ON p.id_turma = t.id_turma WHERE (pa.siape_prof = ? OR ps.siape_prof = ?) AND p.dia >= CURDATE() ORDER BY p.dia ASC, p.horario ASC LIMIT 3");
+    $stmt4 = $conn->prepare("
+        SELECT p.dia, p.horario, d.nome_disciplina, ts.curso, ts.serie 
+        FROM programada p 
+        JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente 
+        LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs 
+        JOIN disciplina d ON p.id_disciplina = d.id_disciplina 
+        JOIN turmas ts ON p.id_turma = ts.id_turma 
+        WHERE (pa.siape_prof = ? OR ps.siape_prof = ?) 
+        AND p.dia >= CURDATE() 
+        ORDER BY p.dia ASC, p.horario ASC 
+        LIMIT 3
+    ");
     if($stmt4){ $stmt4->bind_param("ss", $siape, $siape); $stmt4->execute(); $res4 = $stmt4->get_result(); while($row = $res4->fetch_assoc()){ $reposicoesAgendadas[] = $row; } $stmt4->close(); }
 
-    $conexao->close();
 } else {
     error_log("Principal.php: Conexão com o banco de dados falhou.");
 }

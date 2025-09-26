@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\DAO\DisciplinaDAO.php
 
 require_once __DIR__ . '/Conexao.php';
@@ -6,19 +6,18 @@ require_once __DIR__ . '/Conexao.php';
 class DisciplinaDAO {
     private $conn;
 
-    public function __construct() {
-        $conexao = new Conexao();
-        $this->conn = $conexao->get_connection();
+    public function __construct($db_connection) {
+        $this->conn = $db_connection;
     }
 
-    public function cadastrar($nome_disciplina, $ch, $siape_prof) {
-        $sql = "INSERT INTO disciplina (nome_disciplina, ch, siape_prof) VALUES (?, ?, ?)";
+    public function cadastrar($nome_disciplina, $ch, $siape_prof, $aulas_semanais) {
+        $sql = "INSERT INTO disciplina (nome_disciplina, ch, siape_prof, aulas_semanais) VALUES (?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) {
             error_log("DisciplinaDAO->cadastrar: Erro ao preparar query - " . $this->conn->error);
             return false;
         }
-        $stmt->bind_param("sis", $nome_disciplina, $ch, $siape_prof);
+        $stmt->bind_param("sisi", $nome_disciplina, $ch, $siape_prof, $aulas_semanais);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -117,14 +116,14 @@ class DisciplinaDAO {
     }
 
 
-    public function atualizar($id, $nome_disciplina, $ch) {
-        $sql = "UPDATE disciplina SET nome_disciplina = ?, ch = ? WHERE id_disciplina = ?";
+    public function atualizar($id, $nome_disciplina, $ch, $aulas_semanais) {
+        $sql = "UPDATE disciplina SET nome_disciplina = ?, ch = ?, aulas_semanais = ? WHERE id_disciplina = ?";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) {
             error_log("DisciplinaDAO->atualizar: Erro ao preparar query - " . $this->conn->error);
             return false;
         }
-        $stmt->bind_param("sii", $nome_disciplina, $ch, $id); // ch é INT
+        $stmt->bind_param("siii", $nome_disciplina, $ch, $aulas_semanais, $id);
         $result = $stmt->execute();
         $stmt->close();
         return $result;
@@ -144,12 +143,12 @@ class DisciplinaDAO {
             $stmt_programada->execute();
             $stmt_programada->close();
 
-            $sql_turma = "DELETE FROM turma WHERE id_disciplina = ?";
-            $stmt_turma = $this->conn->prepare($sql_turma);
-            if (!$stmt_turma) throw new Exception("Erro: " . $this->conn->error);
-            $stmt_turma->bind_param("i", $id);
-            $stmt_turma->execute();
-            $stmt_turma->close();
+            $sql_turma_disciplinas = "DELETE FROM turma_disciplinas WHERE id_disciplina = ?";
+            $stmt_turma_disciplinas = $this->conn->prepare($sql_turma_disciplinas);
+            if (!$stmt_turma_disciplinas) throw new Exception("Erro: " . $this->conn->error);
+            $stmt_turma_disciplinas->bind_param("i", $id);
+            $stmt_turma_disciplinas->execute();
+            $stmt_turma_disciplinas->close();
 
             $sql_disciplina = "DELETE FROM disciplina WHERE id_disciplina = ?";
             $stmt_disciplina = $this->conn->prepare($sql_disciplina);

@@ -3,10 +3,11 @@ CREATE DATABASE IF NOT EXISTS projeto_siga;
 USE projeto_siga;
 
 DROP TABLE IF EXISTS `relatorio`;
-DROP TABLE IF EXISTS `programada`;
+DROP TABLE IF EXISTS `turma_disciplinas`;
 DROP TABLE IF EXISTS `prof_subs`;
 DROP TABLE IF EXISTS `prof_ausente`;
-DROP TABLE IF EXISTS `turma`;
+DROP TABLE IF EXISTS `programada`;
+DROP TABLE IF EXISTS `turmas`;
 DROP TABLE IF EXISTS `disciplina`;
 DROP TABLE IF EXISTS `admin`;
 DROP TABLE IF EXISTS `professor`;
@@ -37,13 +38,20 @@ CREATE TABLE `disciplina` (
     FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- Tabela de turmas (COM A CORREÇÃO NA CHAVE PRIMÁRIA)
-CREATE TABLE `turma` (
+-- Tabela de turmas (NOVA)
+CREATE TABLE `turmas` (
     `id_turma` INT NOT NULL,
     `curso` ENUM('Agropecuária', 'Alimentos', 'Informática') NOT NULL,
     `serie` ENUM('1', '2', '3') NOT NULL,
+    PRIMARY KEY (`id_turma`)
+);
+
+-- Tabela de associação entre turmas e disciplinas (antiga 'turma')
+CREATE TABLE `turma_disciplinas` (
+    `id_turma` INT NOT NULL,
     `id_disciplina` INT NOT NULL,
     PRIMARY KEY (`id_turma`, `id_disciplina`),
+    FOREIGN KEY (`id_turma`) REFERENCES `turmas`(`id_turma`) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (`id_disciplina`) REFERENCES `disciplina`(`id_disciplina`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -73,7 +81,6 @@ CREATE TABLE `programada` (
     `id_disciplina` INT,
     `id_ass_subs` INT,
     `id_ass_ausente` INT,
-    FOREIGN KEY (`id_turma`, `id_disciplina`) REFERENCES `turma`(`id_turma`, `id_disciplina`) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (`id_ass_subs`) REFERENCES `prof_subs`(`id_ass_subs`) ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (`id_ass_ausente`) REFERENCES `prof_ausente`(`id_ass_ausente`) ON DELETE CASCADE ON UPDATE CASCADE
 );

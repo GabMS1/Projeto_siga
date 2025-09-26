@@ -2,56 +2,95 @@
 // C:\xampp\htdocs\Projeto_siga\negocio\ProfessorServico.php
 
 require_once __DIR__ . '/../DAO/ProfessorDAO.php';
+require_once __DIR__ . '/../DAO/Conexao.php';
 
 class ProfessorServico {
-    public $siape_prof;
-    public $nome;
-    public $senha;
+    private $professorDAO;
+    private $conn;
 
-    public function set($prop, $value) {
-        $this->$prop = $value;
+    public function __construct() {
+        $this->conn = Conexao::get_connection();
+        if ($this->conn) {
+            $this->professorDAO = new ProfessorDAO($this->conn);
+        }
     }
 
-    public function cadastrar() {
-        $professorDAO = new ProfessorDAO();
-        $senha_hash = password_hash($this->senha, PASSWORD_DEFAULT); 
-        return $professorDAO->cadastrar($this->siape_prof, $this->nome, $senha_hash);
+    public function cadastrar($siape_prof, $nome, $senha) {
+        if (!$this->conn) { return false; }
+
+        try {
+            $senha_hash = password_hash($senha, PASSWORD_DEFAULT); 
+            return $this->professorDAO->cadastrar($siape_prof, $nome, $senha_hash);
+        } catch (Exception $e) {
+            error_log("ProfessorServico->cadastrar: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function autenticar($siape_prof, $senha_digitada) {
-        $professorDAO = new ProfessorDAO();
-        $professorData = $professorDAO->buscarProfessorParaLogin($siape_prof);
+        if (!$this->conn) { return false; }
 
-        if ($professorData && password_verify($senha_digitada, $professorData['senha'])) {
-            return [
-                'siape' => $siape_prof,
-                'nome' => $professorData['nome']
-            ];
+        try {
+            $professorData = $this->professorDAO->buscarProfessorParaLogin($siape_prof);
+
+            if ($professorData && password_verify($senha_digitada, $professorData['senha'])) {
+                return [
+                    'siape' => $siape_prof,
+                    'nome' => $professorData['nome']
+                ];
+            }
+            return false;
+        } catch (Exception $e) {
+            error_log("ProfessorServico->autenticar: " . $e->getMessage());
+            return false;
         }
-        return false;
     }
 
     public function listarProfessores() {
-        $professorDAO = new ProfessorDAO();
-        return $professorDAO->listarTodos();
+        if (!$this->conn) { return []; }
+
+        try {
+            return $this->professorDAO->listarTodos();
+        } catch (Exception $e) {
+            error_log("ProfessorServico->listarProfessores: " . $e->getMessage());
+            return [];
+        }
     }
     
     public function excluirProfessor($siape_prof) {
-        $professorDAO = new ProfessorDAO();
-        return $professorDAO->excluir($siape_prof);
+        if (!$this->conn) { return false; }
+
+        try {
+            return $this->professorDAO->excluir($siape_prof);
+        } catch (Exception $e) {
+            error_log("ProfessorServico->excluirProfessor: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function buscarProfessor($siape_prof) {
-        $professorDAO = new ProfessorDAO();
-        return $professorDAO->buscarPorSiape($siape_prof);
+        if (!$this->conn) { return false; }
+
+        try {
+            return $this->professorDAO->buscarPorSiape($siape_prof);
+        } catch (Exception $e) {
+            error_log("ProfessorServico->buscarProfessor: " . $e->getMessage());
+            return false;
+        }
     }
     
     public function atualizarProfessor($siape_prof, $nome, $nova_senha = null) {
-        $professorDAO = new ProfessorDAO();
-        $senha_hash = null;
-        if ($nova_senha) {
-            $senha_hash = password_hash($nova_senha, PASSWORD_DEFAULT);
+        if (!$this->conn) { return false; }
+
+        try {
+            $senha_hash = null;
+            if ($nova_senha) {
+                $senha_hash = password_hash($nova_senha, PASSWORD_DEFAULT);
+            }
+            return $this->professorDAO->atualizar($siape_prof, $nome, $senha_hash);
+        } catch (Exception $e) {
+            error_log("ProfessorServico->atualizarProfessor: " . $e->getMessage());
+            return false;
         }
-        return $professorDAO->atualizar($siape_prof, $nome, $senha_hash);
     }
 }
