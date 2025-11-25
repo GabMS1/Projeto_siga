@@ -1,9 +1,10 @@
 ﻿<?php
-// conexao.php CORRIGIDO
+// conexao.php CORRIGIDO (FINAL)
 $host = 'db';  // ✅ Nome do serviço no Docker Compose
-$usuario = 'root';
-$senha = 'S!g@!2$';
-$banco = 'siga';
+$usuario = 'siga_user';
+// CORREÇÃO CRÍTICA: A senha deve ser SenhaSegura123! para bater com o Docker Compose
+$senha = 'S!g@!2$'; 
+$banco = 'projeto_siga';
 
 $conexao = new mysqli($host, $usuario, $senha, $banco);
 

@@ -16,7 +16,7 @@ services:
     environment:
       # CORREÇÃO CRÍTICA: Senha sincronizada com o Conexao.php
       MYSQL_ROOT_PASSWORD: SenhaSegura123!
-      MYSQL_DATABASE: siga
+      MYSQL_DATABASE: projeto_siga
       # MYSQL_USER/PASSWORD são opcionais aqui, mas podem ficar
       MYSQL_USER: siga_user
       MYSQL_PASSWORD: S!g@!2$
