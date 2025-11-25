@@ -21,15 +21,6 @@ $mensagem = "";
 
 try {
     $disciplinaServico = new DisciplinaServico();
-    $disciplinas = $disciplinaServico->listarDisciplinas();
-    
-    $turmaServico = new TurmaServico();
-    $turmasRaw = $turmaServico->listarTodasAsTurmas();
-    $turmas = [];
-    foreach ($turmasRaw as $t) {
-        $turmas[$t['id_turma']] = $t['id_turma'] . ' - ' . $t['curso'] . ' ' . $t['serie'] . 'º Ano';
-    }
-    $turmas = array_unique($turmas);
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $id_turma = $_POST['id_turma'] ?? '';
@@ -38,6 +29,7 @@ try {
         if (empty($id_turma) || empty($id_disciplina)) {
             redirect_with_error("Todos os campos são obrigatórios.", "cadastrar_turma_adm.php");
         } else {
+            $turmaServico = new TurmaServico(); // Instancia o serviço aqui
             if ($turmaServico->associarDisciplina((int)$id_turma, (int)$id_disciplina)) {
                 redirect_with_success("Disciplina associada à turma " . htmlspecialchars($id_turma) . " com sucesso!", "gerenciar_turmas.php");
             } else {
@@ -49,8 +41,6 @@ try {
         }
     }
 
-try {
-    $disciplinaServico = new DisciplinaServico();
     $disciplinas = $disciplinaServico->listarDisciplinas();
     
     $turmaServico = new TurmaServico();
@@ -60,7 +50,6 @@ try {
         $turmas[$t['id_turma']] = $t['id_turma'] . ' - ' . $t['curso'] . ' ' . $t['serie'] . 'º Ano';
     }
     $turmas = array_unique($turmas);
-
 } catch (Exception $e) {
     $mensagem = "Erro ao carregar dados: " . $e->getMessage();
 }

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\ver_professores_turma.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -19,18 +19,17 @@ if (isset($_GET['id_turma'])) {
     $id_turma_get = filter_input(INPUT_GET, 'id_turma', FILTER_VALIDATE_INT);
     if ($id_turma_get) {
         $turmaServico = new TurmaServico();
-        // Chamando o método que retorna a lista completa
-        $turma_detalhes = $turmaServico->listarProfessoresDaTurma($id_turma_get);
+        // CORREÇÃO: Chamando o método correto no serviço
+        $turma_detalhes = $turmaServico->listarDetalhesDaTurma($id_turma_get);
         
         if (empty($turma_detalhes)) {
-            $mensagem = "Nenhuma disciplina ou professor encontrado para esta turma, ou a turma não existe.";
-        }
     } else {
         $mensagem = "ID de turma inválido.";
     }
 } else {
     header("Location: gerenciar_turmas.php");
     exit();
+}
 }
 ?>
 <!DOCTYPE html>

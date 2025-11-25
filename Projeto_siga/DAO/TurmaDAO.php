@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\DAO\TurmaDAO.php
 
 require_once __DIR__ . '/Conexao.php';
@@ -12,12 +12,12 @@ class TurmaDAO {
 
     public function buscarTodas() {
         $turmas = [];
-        $sql = "SELECT td.id_turma, ts.curso, ts.serie, d.id_disciplina, d.nome_disciplina, p.nome as nome_professor
-                FROM turma_disciplinas td
-                JOIN turmas ts ON td.id_turma = ts.id_turma
-                JOIN disciplina d ON td.id_disciplina = d.id_disciplina
+        $sql = "SELECT ts.id_turma, ts.curso, ts.serie, d.id_disciplina, d.nome_disciplina, p.nome as nome_professor
+                FROM turmas ts
+                LEFT JOIN turma_disciplinas td ON ts.id_turma = td.id_turma
+                LEFT JOIN disciplina d ON td.id_disciplina = d.id_disciplina
                 LEFT JOIN professor p ON d.siape_prof = p.siape_prof
-                ORDER BY td.id_turma, d.nome_disciplina ASC";
+                ORDER BY ts.id_turma, d.nome_disciplina ASC";
         
         if (!$this->conn) {
             error_log("TurmaDAO - Falha na conexão com o banco de dados.");
@@ -52,7 +52,7 @@ class TurmaDAO {
             return false;
         }
 
-        $stmt->bind_param("isi", $id_turma, $curso, $serie);
+        $stmt->bind_param("iss", $id_turma, $curso, $serie);
         $success = $stmt->execute();
 
         if (!$success) {
@@ -83,12 +83,12 @@ class TurmaDAO {
             $_SESSION['op_error'] = "Erro interno do servidor. Tente novamente mais tarde.";
             return false;
         }
-        // A tabela agora é turma_disciplinas e não tem mais curso e serie
+
         $SQL = "INSERT INTO turma_disciplinas (id_turma, id_disciplina) VALUES (?, ?)";
         $stmt = $this->conn->prepare($SQL);
 
         if (!$stmt) {
-            $_SESSION['op_error'] = "Erro interno ao preparar o cadastro da turma.";
+            $_SESSION['op_error'] = "Erro interno ao preparar a associação da disciplina.";
             return false;
         }
 
@@ -131,13 +131,13 @@ class TurmaDAO {
     public function buscarTurmasPorProfessor($siape_prof) {
         if (!$this->conn) return false;
 
-        $SQL = "SELECT DISTINCT ts.id_turma, ts.curso, ts.serie
+        $SQL = "SELECT DISTINCT ts.id_turma, ts.curso, ts.serie, d.nome_disciplina
                 FROM turmas ts
                 JOIN turma_disciplinas td ON ts.id_turma = td.id_turma
                 JOIN disciplina d ON td.id_disciplina = d.id_disciplina
                 WHERE d.siape_prof = ?";
         $stmt = $this->conn->prepare($SQL);
-        if (!$stmt) return false;
+        if (!$stmt) { return false; }
 
         $stmt->bind_param("s", $siape_prof);
         $stmt->execute();

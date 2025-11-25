@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\DAO\ProgramadaDAO.php
 
 // Inclui o arquivo de conexão com o banco de dados.
@@ -162,7 +162,7 @@ class ProgramadaDAO {
                 ps.siape_prof AS siape_substituto
             FROM programada p
             JOIN prof_ausente pa ON p.id_ass_ausente = pa.id_ass_ausente
-            LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs
+            LEFT JOIN prof_subs ps ON p.id_ass_subs = ps.id_ass_subs -- O LEFT JOIN já estava correto, o problema era a lógica da API
             JOIN turmas ts ON p.id_turma = ts.id_turma
             JOIN disciplina d ON p.id_disciplina = d.id_disciplina
             ORDER BY p.dia ASC, p.horario ASC

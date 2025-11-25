@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\programar_falta.php
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -55,7 +55,7 @@ $disciplinaServico = new DisciplinaServico();
 $disciplinas = $disciplinaServico->listarDisciplinas();
 
 $turmaServico = new TurmaServico();
-$turmas = $turmaServico->listarTurmas($siape_professor_logado);
+$turmas = $turmaServico->buscarTurmasPorProfessor($siape_professor_logado);
 
 ?>
 <!DOCTYPE html>

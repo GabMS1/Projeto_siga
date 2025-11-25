@@ -1,4 +1,4 @@
-﻿<?php
+﻿﻿<?php
 // C:\xampp\htdocs\Projeto_siga\telas\auth\agendar_reposicao.php
 
 // ATENÇÃO CRÍTICA: DEVE SER A PRIMEIRA COISA NO ARQUIVO.
@@ -76,7 +76,7 @@ $disciplinaServico = new DisciplinaServico();
 $disciplinas = $disciplinaServico->listarDisciplinas();
 
 $turmaServico = new TurmaServico();
-$turmas = $turmaServico->listarTurmas($siape_professor_logado);
+$turmas = $turmaServico->buscarTurmasPorProfessor($siape_professor_logado);
 
 ?>
 <!DOCTYPE html>

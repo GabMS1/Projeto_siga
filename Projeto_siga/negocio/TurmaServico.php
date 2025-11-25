@@ -26,6 +26,11 @@ class TurmaServico {
         return $this->turmaDAO->associarDisciplina();
     }
 
+    // CORREÇÃO CRÍTICA: Método que faltava, chamando o DAO correto
+    public function listarDetalhesDaTurma($id_turma) {
+        return $this->turmaDAO->buscarDisciplinasEProfessoresPorTurmaId($id_turma);
+    }
+
     public function buscarTurmasPorProfessor($siape_prof) {
         return $this->turmaDAO->buscarTurmasPorProfessor($siape_prof);
     }

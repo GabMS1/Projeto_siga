@@ -26,7 +26,7 @@ $mensagem = ""; // Para mensagens de feedback
 try {
     $turmaServico = new TurmaServico();
     // Tenta listar as turmas do professor logado.
-    $turmas = $turmaServico->listarTurmas((int)$siape_professor_logado);
+    $turmas = $turmaServico->buscarTurmasPorProfessor((int)$siape_professor_logado);
 
     if (empty($turmas)) {
         $mensagem = "Nenhuma turma cadastrada para este professor.";
