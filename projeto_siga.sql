@@ -1,12 +1,12 @@
 CREATE DATABASE IF NOT EXISTS projeto_siga;
-
 USE projeto_siga;
 
+-- Remover tabelas na ordem correta (devido às FKs)
 DROP TABLE IF EXISTS `relatorio`;
-DROP TABLE IF EXISTS `turma_disciplinas`;
+DROP TABLE IF EXISTS `programada`;
 DROP TABLE IF EXISTS `prof_subs`;
 DROP TABLE IF EXISTS `prof_ausente`;
-DROP TABLE IF EXISTS `programada`;
+DROP TABLE IF EXISTS `turma_disciplinas`;
 DROP TABLE IF EXISTS `turmas`;
 DROP TABLE IF EXISTS `disciplina`;
 DROP TABLE IF EXISTS `admin`;
@@ -38,7 +38,7 @@ CREATE TABLE `disciplina` (
     FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- Tabela de turmas (NOVA)
+-- Tabela de turmas
 CREATE TABLE `turmas` (
     `id_turma` INT NOT NULL,
     `curso` ENUM('Agropecuária', 'Alimentos', 'Informática') NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE `turmas` (
     PRIMARY KEY (`id_turma`)
 );
 
--- Tabela de associação entre turmas e disciplinas (antiga 'turma')
+-- Tabela de associação entre turmas e disciplinas
 CREATE TABLE `turma_disciplinas` (
     `id_turma` INT NOT NULL,
     `id_disciplina` INT NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE `prof_subs` (
     FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- Tabela para reposições
+-- Tabela para reposições - CORRIGIDA
 CREATE TABLE `programada` (
     `id_progra` INT AUTO_INCREMENT PRIMARY KEY,
     `dia` DATE NOT NULL,
@@ -81,6 +81,8 @@ CREATE TABLE `programada` (
     `id_disciplina` INT,
     `id_ass_subs` INT,
     `id_ass_ausente` INT,
+    FOREIGN KEY (`id_turma`) REFERENCES `turmas`(`id_turma`) ON DELETE CASCADE ON UPDATE CASCADE,  -- ✅ CORRIGIDO
+    FOREIGN KEY (`id_disciplina`) REFERENCES `disciplina`(`id_disciplina`) ON DELETE CASCADE ON UPDATE CASCADE,  -- ✅ CORRIGIDO
     FOREIGN KEY (`id_ass_subs`) REFERENCES `prof_subs`(`id_ass_subs`) ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (`id_ass_ausente`) REFERENCES `prof_ausente`(`id_ass_ausente`) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -93,10 +95,28 @@ CREATE TABLE `relatorio` (
     `siape_prof` VARCHAR(20),
     `id_progra` INT,
     `id_adm` INT,
-    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`),
-    FOREIGN KEY (`id_progra`) REFERENCES `programada`(`id_progra`),
-    FOREIGN KEY (`id_adm`) REFERENCES `admin`(`id_adm`)
+    FOREIGN KEY (`siape_prof`) REFERENCES `professor`(`siape_prof`) ON DELETE CASCADE ON UPDATE CASCADE,  -- ✅ CORRIGIDO
+    FOREIGN KEY (`id_progra`) REFERENCES `programada`(`id_progra`) ON DELETE CASCADE ON UPDATE CASCADE,  -- ✅ CORRIGIDO
+    FOREIGN KEY (`id_adm`) REFERENCES `admin`(`id_adm`) ON DELETE CASCADE ON UPDATE CASCADE  -- ✅ CORRIGIDO
 );
+
+-- INSERÇÕES SEGURAS - CORRIGIDAS
+INSERT IGNORE INTO `professor` (`siape_prof`, `nome`, `senha`) 
+VALUES 
+('1234567', 'João Silva', 'senha123'),
+('2345678', 'Maria Santos', 'senha456'),
+('3456789', 'Pedro Costa', 'senha789');
+
+INSERT IGNORE INTO `admin` (`siape_login`, `nome`, `senha_adm`, `cargo`) 
+VALUES 
+('7654321', 'Carlos Oliveira', 'admin123', 'Coordenador'),
+('8765432', 'Ana Pereira', 'admin456', 'Diretor');
+
+INSERT IGNORE INTO `turmas` (`id_turma`, `curso`, `serie`) 
+VALUES 
+(1, 'Informática', '1'),
+(2, 'Informática', '2'),
+(3, 'Agropecuária', '1');
 
 -- Adicionando índices para melhor performance
 CREATE INDEX `idx_disciplina_professor` ON `disciplina`(`siape_prof`);

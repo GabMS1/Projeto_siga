@@ -1,32 +1,28 @@
+# docker-compose.yml CORRIGIDO
+version: '3.8'
+
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: always
+  web:
+    build: .
     ports:
       - "80:80"
     volumes:
-      - ./Projeto_siga:/var/www/html
-      - ./output_buffering.ini:/usr/local/etc/php/conf.d/output_buffering.ini
+      - .:/var/www/html
     depends_on:
       - db
-    env_file:
-      - ./.env
 
   db:
     image: mysql:8.0
-    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: S!g@!2$
+      MYSQL_DATABASE: siga
+      MYSQL_USER: siga_user
+      MYSQL_PASSWORD: S!g@!2$
+    ports:
+      - "3307:3306"  # Mudei para 3307 para não conflitar
     volumes:
       - db_data:/var/lib/mysql
-      - ./projeto_siga.sql:/docker-entrypoint-initdb.d/init.sql
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: projeto_siga
-      MYSQL_USER: user_siga
-      MYSQL_PASSWORD: siga_password
-    ports:
-      - "3306:3306"
+      - ./siga.sql:/docker-entrypoint-initdb.d/siga.sql
 
 volumes:
   db_data:
