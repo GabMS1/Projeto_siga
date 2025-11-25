@@ -14,7 +14,12 @@ RUN apt-get update && apt-get install -y netcat-traditional
 COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
 RUN chmod +x /usr/local/bin/wait-for-db.sh
 
+# CORREÇÃO: Copia a configuração de buffer de saída para o PHP
+COPY output_buffering.ini /usr/local/etc/php/conf.d/output_buffering.ini
+
 # Copia todos os arquivos do projeto para o diretório de trabalho do contêiner
+# IMPORTANTE: Este passo é mantido para que a imagem seja construída corretamente,
+# mas o acesso em tempo real será feito pelo Volume do docker-compose.yml
 COPY Projeto_siga/ .
 
 # Usa o script de espera para iniciar o Apache
